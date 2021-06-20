@@ -1,0 +1,21 @@
+{
+  "assumptions": {
+    "arrayLikeIsIterable": true,
+    "constantReexports": true,
+    "constantSuper": true,
+    "ignoreFunctionLength": true,
+    "ignoreToPrimitiveHint": true,
+    "mutableTemplateObject": true,
+    "noClassCalls": true,
+    "noDocumentAll": true,
+    "noNewArrows": true,
+    "objectRestNoSymbols": true,
+    "pureGetters": true
+  },
+  "plugins": [
+    "@babel/plugin-transform-runtime"
+  ],
+  "presets": [
+    "@babel/preset-env"
+  ]
+}

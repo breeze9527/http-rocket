@@ -1,0 +1,156 @@
+extends ../example.pug
+
+block main
+  #setting
+    .item
+      label(for="rand-key") Random query key:
+      input#rand-key
+    .item
+      label(for="user-id") User id:
+      input#user-id(value="1")
+  button#send-button Send
+  #response
+    .item
+      .label Request data:
+      #req-data.content
+    .item
+      .label Response data:
+      #res-data.content
+    .item
+      .label Custom response type:
+      #res-type.content
+
+block script
+  script.
+    var el = {
+      button: document.getElementById('send-button'),
+      input: {
+        randKey: document.getElementById('rand-key'),
+        userId: document.getElementById('user-id'),
+      },
+      view: {
+        req: document.getElementById('req-data'),
+        resData: document.getElementById('res-data'),
+        customType: document.getElementById('res-type')
+      }
+    };
+    var Rocket = rocket.Rocket;
+    /**
+     *  in ES6:
+     *
+     *  class ReporterPlugin {
+     *    constructor() {
+     *      super('reporter');
+     *    }
+     *  }
+     */
+    function ReporterPlugin() {
+      rocket.Plugin.call(this, 'reporter');
+      this.startTime = {};
+    }
+    // simple inheritance, do not use in production code
+    ReporterPlugin.prototype = Object.assign(
+      {
+        preFetch(context) {
+          // record
+          this.startTime[context.id] = Date.now();
+        },
+        postFetch(context) {
+          // report
+          var id = context.request.id;
+          var startTime = this.startTime[id];
+          if (startTime === undefined) {
+            throw new Error('Oops, is something wrong!');
+          }
+          var req = context.request;
+          el.view.req.innerText = [
+            'Request#', id,
+            '(', context.request.method, ' ' , context.url, '): ',
+            Date.now() - startTime, 'ms'
+          ].join('');
+          delete this.startTime[id];
+        }
+      },
+      Object.create(rocket.Plugin.prototype)
+    );
+
+    function RandQueryPlugin(defaultQueryKey) {
+      rocket.Plugin.call(this, 'randomQuery');
+      this.defaultQueryKey = defaultQueryKey;
+    }
+    RandQueryPlugin.prototype = Object.assign(
+      {
+        request(context, pluginOption) {
+          var queryKey = pluginOption || this.defaultQueryKey;
+          // mutate search query
+          context.query.set(queryKey, Math.random().toString().slice(2));
+        }
+      },
+      Object.create(rocket.Plugin.prototype)
+    );
+
+    function CustomError(detail) {
+      rocket.Error.call(this, detail.message);
+      this.detail = detail;
+    }
+    CustomError.prototype = Object.create(rocket.Error.prototype);
+    
+    function CustomErrorPlugin() {
+      rocket.Plugin.call(this, 'customError');
+    }
+    CustomErrorPlugin.prototype = Object.assign(
+      {
+        respond(context) {
+          var res = context.response;
+          if (context.error === null && res && res.body.errCode !== 0 ) {
+            context.error = new CustomError(res.body);
+          }
+        }
+      },
+      Object.create(rocket.Plugin.prototype)
+    );
+
+    var getUser = new Rocket({
+      method: 'GET',
+      source: location.origin + '/api/plugin/users/:userId',
+      responseType: 'json',
+      plugins: [
+        new ReporterPlugin(),
+        new RandQueryPlugin('q'),
+        new CustomErrorPlugin()
+      ],
+      payload: function(data) {
+        return {
+          params: {
+            userId: data.userId
+          },
+          pluginOptions: {
+            randomQuery: data.queryKey
+          }
+        }
+      } 
+    });
+    el.button.addEventListener('click', function() {
+      var userId = el.input.userId.value;
+      if (userId === '') {
+        return;
+      }
+      getUser.send({
+        userId: userId,
+        queryKey: el.input.randKey.value,
+      }).promise.then(
+        function(resp) {
+          el.view.resData.innerText = JSON.stringify(resp.body, undefined, '  ');
+          el.view.customType.innerText = 'success';
+        },
+        function(err) {
+          if (err instanceof CustomError) {
+            el.view.resData.innerText = JSON.stringify(err.detail, undefined, '  ');
+            el.view.customType.innerText = 'error';
+          } else {
+            throw err;
+          }
+        }
+      )
+    });
+

@@ -1,0 +1,103 @@
+extends ../example.pug
+
+block main
+  .download
+    .setting
+      label(for="size-input") File size(KB): 
+      input#size-input(type="number" value="10240")
+      button#button-download Download
+    .result
+      progress#download-progress(max="100" value="0") 0%
+      .message#download-result
+  .upload
+    .setting
+      input#file-input(type="file")
+      button#button-upload Upload
+    .result
+      progress#upload-progress(max="100" value="0") 0%
+      .message#upload-result
+
+block script
+  script.
+    var el = {
+      input: {
+        file: document.getElementById('file-input'),
+        size: document.getElementById('size-input')
+      },
+      progress: {
+        upload: document.getElementById('upload-progress'),
+        download: document.getElementById('download-progress')
+      },
+      result: {
+        upload: document.getElementById('upload-result'),
+        download: document.getElementById('download-result')
+      },
+      downloadButton: document.getElementById('button-download'),
+      uploadButton: document.getElementById('button-upload'),
+    };
+
+    var download = new rocket.Rocket({
+      method: 'GET',
+      responseType: 'blob',
+      source: location.origin + '/api/file',
+      payload: function(size) {
+        return {
+          query: { size: size }
+        };
+      }
+    });
+    var upload = new rocket.Rocket({
+      method: 'POST',
+      responseType: 'json',
+      source: location.origin + '/api/file',
+      payload: function(formData) {
+        return { body: formData }
+      }
+    });
+
+    function updateProgress(dom, loaded, total) {
+      var percentage = loaded === 0
+        ? 0
+        : Math.round(loaded * 10000 / total) / 100
+      dom.setAttribute('value', percentage);
+      dom.innerText = percentage + '%';
+    }
+    el.downloadButton.addEventListener('click', function() {
+      var sizeInputValue = parseInt(el.input.size.value, 10);
+      if (isNaN(sizeInputValue)) {
+        return;
+      }
+      el.result.download.innerText = '';
+      var mission = download.send(sizeInputValue);
+      updateProgress(el.progress.download, 0, 0);
+      mission.on('progress', function(event) {
+        updateProgress(el.progress.download, event.loaded, event.total);
+      });
+      mission.promise.then(function(resp) {
+        var blob = resp.body;
+        el.result.download.innerText = 
+          'Download success! ' +
+          'size:' + resp.body.size + 'bytes'
+      });
+    });
+
+    el.uploadButton.addEventListener('click', function() {
+      var file = el.input.file.files.item(0);
+      if (!file) {
+        return;
+      }
+      el.result.upload.innerText = '';
+      updateProgress(el.progress.upload, 0, 0);
+
+      var formData = new FormData();
+      formData.append('file', file);
+      var mission = upload.send(formData);
+      mission.on('uploadProgress', function(event) {
+        updateProgress(el.progress.upload, event.loaded, event.total);
+      });
+      mission.promise.then(function(resp) {
+        el.result.upload.innerText = 
+          'Upload success! ' +
+          'size:' + resp.body.size + 'bytes'
+      });
+    });

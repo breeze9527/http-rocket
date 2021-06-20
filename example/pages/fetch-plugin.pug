@@ -1,0 +1,153 @@
+extends ../example.pug
+
+block style
+  style.
+    #table td:nth-of-type(1),
+    #table th:nth-of-type(1) {
+      width: 100px;
+    }
+    #table td:nth-of-type(2),
+    #table th:nth-of-type(2) {
+      width: 200px;
+    }
+
+block main
+  button#send-button-1 Send with throttle
+  button#send-button-2 Send without throttle
+  button#abort-button Abort
+
+  table#table
+    tbody#table-body
+      tr
+        th Request id
+        th Server time
+
+block script
+  script.
+    var el = {
+      throttleButton: document.getElementById('send-button-1'),
+      unlimitedButton: document.getElementById('send-button-2'),
+      abortButton: document.getElementById('abort-button'),
+      tableBody: document.getElementById('table-body')
+    };
+
+    function ThrottlePlugin(throttle) {
+      rocket.Plugin.call(this, 'throttle');
+      this.throttle = throttle || 1000;
+      this.latestResponse = {
+        id: null,
+        time: null,
+        response: null
+      };
+      this.loading = false;
+      this.pendingCallbacks = [];
+    }
+    ThrottlePlugin.prototype = Object.assign(
+      {
+        fetch(context, disabled, callback) {
+          var latestResponse = this.latestResponse;
+
+          if (disabled) { // disabled, ignore it
+            callback();
+          } else if (this.loading) {
+            var pendingCallbacks = this.pendingCallbacks;
+            pendingCallbacks.push(callback);
+            // return canceler
+            return function () {
+              // remove from queue & respond with error
+              var matchIndex = pendingCallbacks.indexOf(callback);
+              pendingCallbacks.splice(matchIndex, 1);
+              callback(new rocket.AbortError());
+            };
+          } else if (
+            latestResponse.time === null || // first fetch
+            Date.now() - latestResponse.time > this.throttle // expired
+          ) {
+            latestResponse.response = null;
+            latestResponse.id = context.id;
+            this.loading = true;
+            callback();
+          } else {
+            callback(null, latestResponse.response);
+          }
+        },
+        postFetch(context) {
+          var latestResponse = this.latestResponse;
+          if (latestResponse.id !== context.request.id) {
+            return;
+          }
+          latestResponse.id = null;
+          this.loading = false;
+          if (this.pendingCallbacks.length) {
+            this.pendingCallbacks.forEach(function(callback) {
+              if (context.error) {
+                callback(context.error);
+              } else {
+                callback(null, context.response);
+              }
+            });
+            this.pendingCallbacks = [];
+          }
+          if (context.error === null) {
+            latestResponse.time = Date.now();
+            latestResponse.response = context.response;
+          }
+        }
+      },
+      Object.create(rocket.Plugin.prototype)
+    );
+
+    var getServerTime = new rocket.Rocket({
+      method: 'GET',
+      source: location.origin + '/api/fetch-plugin/server-time',
+      payload: function(disableThrottle) {
+        return {
+          pluginOptions: {
+            throttle: disableThrottle
+          }
+        };
+      },
+      plugins: [
+        new ThrottlePlugin(3000)
+      ]
+    });
+
+    function appendResponse(id, content) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = [
+        '<td>', id, '</td>',
+        '<td req-id="', id, '">', content, '</td>',
+      ].join('');
+      el.tableBody.append(tr);
+    }
+    function updateResponse(id, content) {
+      var el = document.querySelector('[req-id="' + id + '"]');
+      if (el) {
+        el.innerText = content;
+      }
+    }
+    function start(disableThrottle) {
+      var mission = getServerTime.send(disableThrottle);
+      appendResponse(mission.id, 'Loading');
+      mission.promise.then(
+        function(res) {
+          updateResponse(mission.id, res.body.toString());
+        },
+        function(err) {
+          updateResponse(mission.id, err.toString());
+        }
+      );
+      lastMission = mission;
+    }
+    var lastMission = null;
+    el.throttleButton.addEventListener('click', function() {
+      start(false);
+    });
+    el.unlimitedButton.addEventListener('click', function() {
+      start(true);
+    });
+    el.abortButton.addEventListener('click', function() {
+      if (lastMission) {
+        lastMission.abort();
+      }
+    });

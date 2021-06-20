@@ -1,0 +1,42 @@
+html
+  head
+    meta(charset="UTF-8")
+    meta(
+      http-equiv="X-UA-Compatible"
+      content="IE=edge"
+    )
+    meta(
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    )
+    title #{title}
+    script(
+      src="/dist/umd/rocket.js"
+      type="text/javascript"
+    )
+    style.
+      h1 {
+        font-size: 20px;
+        text-align: center;
+      }
+
+      #response>.item {
+        margin-top: 16px;
+      }
+      #response>.item>.label {
+        font-size: 14px;
+        color: #BBB;
+      }
+      #response>.item>.content {
+        padding-left: 16px;
+        white-space: pre;
+        font-size: 16px;
+        color: #333;
+      }
+    block style 
+  body
+    h1 #{title}
+    hr
+    main#main
+      block main
+    block script

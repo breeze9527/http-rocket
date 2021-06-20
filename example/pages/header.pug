@@ -1,0 +1,100 @@
+extends ../example.pug
+
+block style
+  style.
+    #table {
+      border-collapse: collapse;
+    }
+    #table tr {
+      border-bottom: 1px solid #999;
+    }
+    #table td:nth-of-type(1),
+    #table th:nth-of-type(1) {
+      width: 200px;
+    }
+    #table td:nth-of-type(2),
+    #table th:nth-of-type(2) {
+      width: 700px;
+    }
+
+block main
+  #setting
+    .item
+      label(for="accept") Accept type value:
+      input(id="accept")
+
+      label(for="only") Accept this type only:
+      input(id="only" type="checkbox")
+
+    .item 
+      label(for="header-key") Custom header key:
+      input(id="header-key" value="x-username")
+
+      label(for="header-value") Value:
+      input(id="header-value" value="Mike")
+
+  button#send-button Send
+
+  #response
+    table#table
+      tbody#table-body
+
+block script
+  script.
+    var el = {
+      button: document.getElementById('send-button'),
+      tableBody: document.getElementById('table-body'),
+      input: {
+        accept: document.getElementById('accept'),
+        only: document.getElementById('only'),
+        headerKey: document.getElementById('header-key'),
+        headerValue: document.getElementById('header-value')
+      }
+    };
+    var headersEcho = new rocket.Rocket({
+      method: 'GET',
+      responseType: 'json',
+      source: location.origin + '/api/header',
+      headers: {
+       'x-accept-type': 'text'
+      },
+      payload: function(param) {
+        var headers = {};
+        if (param.type) {
+          headers['x-accept-type'] = param.type;
+        }
+        if (param.customKey && param.customValue) {
+          headers[param.customKey] = param.customValue;
+        };
+        return {
+          headers: param.overwriteType ? new Headers(headers) : headers
+        };
+      }
+    });
+    
+    function renderColumns(name, value) {
+      return [
+        '<td>', name, '</td>',
+        '<td>', value, '</td>'
+      ].join('');
+    }
+    el.button.addEventListener('click', function() {
+      headersEcho.send({
+        type: el.input.accept.value,
+        customKey: el.input.headerKey.value,
+        customValue: el.input.headerValue.value,
+        overwriteType: el.input.only.checked
+      }).promise.then(function(resp) {
+        var data = resp.body;
+        var rows = ['<tr><th>Field</th><th>Value</th></tr>'];
+        for (var i = 0; i < data.length; i += 2) {
+          rows.push([
+            '<tr>',
+              '<td>', data[i], '</td>',
+              '<td>', data[i + 1], '</td>',
+            '</tr>'
+          ].join(''));
+        }
+        el.tableBody.innerHTML = rows.join('');
+      });
+    });

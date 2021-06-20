@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ES2015",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "target": "ESNext",
+    "rootDir": "src"
+  },
+  "exclude": [
+    "*.bak.*"
+  ]
+}

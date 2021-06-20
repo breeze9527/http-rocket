@@ -1,0 +1,42 @@
+{
+  "name": "http-rocket",
+  "version": "0.0.1",
+  "main": "dist/cjs/rocket.js",
+  "author": "breeze9527 <breeze9527@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.14.3",
+    "@babel/plugin-transform-runtime": "^7.14.5",
+    "@babel/preset-env": "^7.14.5",
+    "@rollup/plugin-babel": "^5.3.0",
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "@rollup/plugin-replace": "^2.4.2",
+    "@rollup/plugin-typescript": "^8.2.1",
+    "@types/node": "^15.12.1",
+    "del": "^6.0.0",
+    "express": "^4.17.1",
+    "gulp": "^4.0.2",
+    "gulp-better-rollup": "^4.0.1",
+    "gulp-sourcemaps": "^3.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "multer": "^1.4.2",
+    "pug": "^3.0.2",
+    "rollup": "^2.51.1",
+    "rollup-plugin-node-polyfills": "^0.2.1",
+    "rollup-plugin-terser": "^7.0.2",
+    "serve-static": "^1.14.1",
+    "tslib": "^2.3.0",
+    "typescript": "^4.3.2"
+  },
+  "scripts": {
+    "build": "gulp build",
+    "build:types": "gulp buildDeclaration",
+    "build:bundle": "gulp bundle",
+    "clean": "gulp clean",
+    "example": "node example/server/index.js",
+    "rollup": "rollup -c"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.14.6"
+  }
+}

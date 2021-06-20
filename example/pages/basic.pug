@@ -1,0 +1,71 @@
+extends ../example.pug
+
+block main
+  .setting
+    select#select.select
+      option(value="text") Text
+      option(value="json") JSON
+      option(value="payload") Payload
+    button#send-button.submit Send
+  #response
+    .item
+      .label Response status:
+      #res-status.content
+    .item
+      .label Response content:
+      #res-content.content
+
+block script
+  script.
+    var el = {
+      button: document.getElementById('send-button'),
+      select: document.getElementById('select'),
+      statusDisplay: document.getElementById('res-status'),
+      contentDisplay: document.getElementById('res-content'),
+    };
+    var Rocket = rocket.Rocket;
+    var origin = location.origin;
+    var instText = new Rocket('GET', origin + '/api/basic/get');
+    var instJson = new Rocket({
+      method: 'GET',
+      source: origin + '/api/basic/json',
+      responseType: 'json'
+    });
+    var instPayload = new Rocket({
+      method: 'GET',
+      source: origin + '/api/basic/groups/:groupId',
+      responseType: 'json',
+      payload: function(data) {
+        return {
+          params: {groupId: data.groupId},
+          query: {name: data.name}
+        };
+      }
+    });
+    el.button.addEventListener('click', function() {
+      var mission;
+      switch (el.select.value) {
+        case 'text':
+          mission = instText.send();
+          break;
+        case 'json':
+          mission = instJson.send();
+          break;
+        case 'payload':
+          mission = instPayload.send({
+            groupId: '1',
+            name: 'Mike'
+          });
+          break;
+      }
+      if (mission) {
+        mission.promise.then(function(resp) {
+          console.log('response:', resp);
+          var data = resp.body;
+          el.statusDisplay.innerText = resp.status;
+          el.contentDisplay.innerText = typeof data === 'string'
+            ? data
+            : JSON.stringify(data, undefined, '  ');
+        });
+      }
+    });

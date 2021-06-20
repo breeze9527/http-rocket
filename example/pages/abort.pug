@@ -1,0 +1,60 @@
+extends ../example.pug
+
+block main
+  button#send-button Send
+  button#abort-button Abort
+
+  #response
+    .item
+      .label Status:
+      #status.content
+    .item
+      .label Result:
+      #result.content
+
+block script
+  script.
+    var activeMission = null;
+    var el = {
+      button: {
+        send: document.getElementById('send-button'),
+        abort: document.getElementById('abort-button')
+      },
+      view: {
+        status: document.getElementById('status'),
+        result: document.getElementById('result')
+      }
+    };
+    var url = location.origin + '/api/abort/first-user';
+    var getFirstUser = new rocket.Rocket({
+      method: 'GET',
+      responseType: 'json',
+      source: url
+    });
+    el.button.send.addEventListener('click', function() {
+      el.view.status.innerText = 'Loading';
+      activeMission = getFirstUser.send();
+      el.button.send.setAttribute('disabled', 'disabled');
+      el.view.result.innerText = '';
+      activeMission.promise.then(
+        function(resp) {
+          el.view.status.innerText = 'Success';
+          el.view.result.innerText = JSON.stringify(resp.body, undefined, '  ');
+          el.button.send.removeAttribute('disabled');
+          activeMission = null;
+        },
+        function(err) {
+          el.view.status.innerText = err instanceof rocket.AbortError
+            ? 'Aborted'
+            : 'Error';
+          el.view.result.innerText = err.toString();
+          el.button.send.removeAttribute('disabled');
+          activeMission = null;
+        }
+      );
+    });
+    el.button.abort.addEventListener('click', function() {
+      if (activeMission !== null) {
+        activeMission.abort()
+      }
+    });
