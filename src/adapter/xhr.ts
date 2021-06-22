@@ -34,78 +34,64 @@ export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
   xhr.open(method, url);
 
   // headers
-  if (headers) {
-    for (const [key, value] of headers) {
-      xhr.setRequestHeader(key, value);
-    }
+  for (const [key, value] of headers) {
+    xhr.setRequestHeader(key, value);
   }
 
   // handle response success
-  if (successCallback || errorCallabck) {
-    xhr.onload = function handleXhrLoad() {
-      const responseHeader = parseResponseHeaders(xhr.getAllResponseHeaders());
-      const responseStatus = xhr.status;
-      if (responseType === 'json') {
-        const text = xhr.responseText.trim();
-        let result = null;
-        if (text !== '') {
-          try {
-            result = JSON.parse(xhr.responseText) as Record<string, any>;
-          } catch (e) {
-            errorCallabck?.(new ParseError(e));
-          }
+  xhr.onload = function handleXhrLoad() {
+    const responseHeader = parseResponseHeaders(xhr.getAllResponseHeaders());
+    const responseStatus = xhr.status;
+    if (responseType === 'json') {
+      const text = xhr.responseText.trim();
+      let result = null;
+      if (text !== '') {
+        try {
+          result = JSON.parse(xhr.responseText) as Record<string, any>;
+        } catch (e) {
+          errorCallabck(new ParseError(e));
         }
-        successCallback?.({
-          body: result,
-          headers: responseHeader,
-          status: responseStatus
-        });
-      } else {
-        successCallback?.({
-          body: xhr.response,
-          headers: responseHeader,
-          status: responseStatus
-        });
       }
+      successCallback({
+        body: result,
+        headers: responseHeader,
+        status: responseStatus
+      });
+    } else {
+      successCallback({
+        body: xhr.response,
+        headers: responseHeader,
+        status: responseStatus
+      });
     }
   }
 
-  // errors
-  if (errorCallabck) {
-    // timeout error
-    xhr.ontimeout = function timeoutHandler() {
-      errorCallabck(new TimeoutError());
-    }
-    // abort
-    xhr.onabort = function() {
-      errorCallabck(new AbortError());
-    }
-    // network error
-    xhr.onerror = function errorHandler() {
-      errorCallabck(new NetworkError());
-    }
+  // timeout error
+  xhr.ontimeout = function timeoutHandler() {
+    errorCallabck(new TimeoutError());
   }
-  // progress
-  if (progressCallback) {
-    xhr.onprogress = function progressHandler(e) {
-      progressCallback(e);
-    }
+  // abort
+  xhr.onabort = function() {
+    errorCallabck(new AbortError());
+  }
+  // network error
+  xhr.onerror = function errorHandler() {
+    errorCallabck(new NetworkError());
+  }
+  xhr.onprogress = function progressHandler(e) {
+    progressCallback(e);
   }
 
   // upload
   const upload = xhr.upload;
   if (upload) {
     // upload progress
-    if (uploadProgressCallback) {
-      upload.onprogress = function uploadProgressHandler(e) {
-        return uploadProgressCallback(e);
-      }
+    upload.onprogress = function uploadProgressHandler(e) {
+      return uploadProgressCallback(e);
     }
     // upload success
-    if (uploadSuccessCallback) {
-      upload.onload = function uploadSuccessHandle() {
-        return uploadSuccessCallback();
-      }
+    upload.onload = function uploadSuccessHandle() {
+      return uploadSuccessCallback();
     }
   }
 

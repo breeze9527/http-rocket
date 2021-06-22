@@ -13,7 +13,7 @@ import {
   normalizeQueryLiteral,
   mergeHeaders
 } from '../util';
-import RocketMission from './mission';
+import Mission from './mission';
 import {
   RocketPlugin,
   PluginsOption,
@@ -40,10 +40,10 @@ interface RocketOption<D> {
 
 let nextId = 0;
 class Rocket<D, R> {
-  readonly source: Source;
   readonly method: HTTPMethod;
-  readonly timeout: number;
   readonly responseType: ResponseType;
+  readonly source: Source;
+  readonly timeout: number;
   #adapter: Adapter;
   #headers: Headers;
   #normalizePayload?: (data: D) => Payload;
@@ -122,7 +122,7 @@ class Rocket<D, R> {
     const requestContext = this.createRequestContext(payload);
     const plugins = this.#plugins.slice();
     plugins.reverse();
-    return new RocketMission<R>(
+    return new Mission<R>(
       plugins.map(plugin => ({
         plugin,
         option: payload.pluginOptions?.[plugin.name]

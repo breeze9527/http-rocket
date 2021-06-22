@@ -59,7 +59,7 @@ export function processFetch<D>(
 ) {
   const fetchContext = freezeCopy(context);
 
-  const url = fetchContext.source.build(
+  const url = fetchContext.source.toURL(
     fetchContext.params,
     fetchContext.query
   );

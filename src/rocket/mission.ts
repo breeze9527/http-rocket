@@ -20,7 +20,7 @@ import {
   processPostRespond
 } from './plugin-process';
 
-class RocketMission<D> extends EventEmitter {
+class Mission<D> extends EventEmitter {
   #canceler?: () => void;
   readonly promise: Promise<Response<D>>;
   readonly method: HTTPMethod;
@@ -41,7 +41,7 @@ class RocketMission<D> extends EventEmitter {
     this.method = fetchContext.method; 
     this.id = fetchContext.id;
     this.source = fetchContext.source;
-    this.url = fetchContext.source.build(
+    this.url = fetchContext.source.toURL(
       fetchContext.params,
       fetchContext.query
     );
@@ -92,4 +92,4 @@ class RocketMission<D> extends EventEmitter {
   }
 }
 
-export default RocketMission;
+export default Mission;

@@ -162,7 +162,7 @@ class Source {
     return result;
   }
 
-  build(param: Record<string, string | number> = {}, query: URLSearchParams | QueryLiteral = {}) {
+  toURL(param: Record<string, string | number> = {}, query: URLSearchParams | QueryLiteral = {}) {
     let result = this.origin;
     const resultPath =  this.#path.normalize(param);
     if (resultPath !== '') {

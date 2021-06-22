@@ -24,7 +24,6 @@ export {
   default as default,
   Payload as RocketPayload
 } from './rocket';
-export { default as RocketMission } from './rocket/mission';
 export { default as Source } from './source';
 export { default as Path } from './source/path';
 export type {

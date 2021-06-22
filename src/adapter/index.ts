@@ -10,18 +10,18 @@ export interface Response<T> {
   status: number;
 }
 export interface AdapterCallbacks<T = unknown> {
-  progress?(event: ProgressEvent): void;
-  success?(data: Response<T | null>): void;
-  error?(error: RocketError): void;
-  uploadProgress?(event: ProgressEvent): void;
-  uploadSuccesse?(): void;
+  progress(event: ProgressEvent): void;
+  success(data: Response<T | null>): void;
+  error(error: RocketError): void;
+  uploadProgress(event: ProgressEvent): void;
+  uploadSuccesse(): void;
 }
 export interface AdapterOptions {
-  body?: Document | BodyInit | null;
-  headers?: Headers;
+  body: Document | BodyInit | null;
+  headers: Headers;
   method: HTTPMethod;
-  responseType?: ResponseType;
-  timeout?: number;
+  responseType: ResponseType;
+  timeout: number;
   url: string;
 }
 export interface Adapter {
