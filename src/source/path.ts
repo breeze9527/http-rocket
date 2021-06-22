@@ -129,6 +129,9 @@ class Path {
     }
     return result.join(PATH_SEPARATOR);
   }
+  clone() {
+    return new Path(this.#segments);
+  }
 }
 
 export default Path;

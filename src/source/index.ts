@@ -176,6 +176,17 @@ class Source {
     }
     return result;
   }
+
+  clone() {
+    return new Source({
+      hostName: this.#hostName,
+      password: this.#password,
+      path: this.#path.clone(),
+      port: this.#port,
+      protocol: this.#protocol,
+      userName: this.#userName
+    });
+  }
 }
 
 export default Source;
