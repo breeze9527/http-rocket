@@ -89,4 +89,7 @@ for (const [path, config] of Object.entries(handlers)) {
   }
 }
 
-app.listen(3000);
+const LISTEN_PORT = 3000;
+app.listen(LISTEN_PORT, () => {
+  console.log('Server running on: http://localhost:' + LISTEN_PORT);
+});
