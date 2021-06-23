@@ -1,6 +1,6 @@
 export class RocketError {
-  name: string = 'RocketError';
-  message: string;
+  readonly name: string = 'RocketError';
+  readonly message: string;
   constructor(message = '' ) {
     this.message = message;
   }
