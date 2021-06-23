@@ -16,7 +16,7 @@ function createOutputConfig(format, minify) {
     file: packageName + (minify ? '.min' : '') + '.js',
     format,
     plugins: minify ? [terser()] : [],
-    name: packageName
+    name: 'rocket'
   };
 }
 
