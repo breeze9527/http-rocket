@@ -34,7 +34,7 @@ interface FetchCallback {
   (error: RocketError): void;
   (error: null, response: any): void;
 }
-export abstract class RocketPlugin<Option = any> {
+export abstract class Plugin<Option = any> {
   readonly name: string;
   constructor(name: string) {
     this.name = name;

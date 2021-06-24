@@ -15,7 +15,7 @@ import {
 } from '../util';
 import Mission from './mission';
 import {
-  RocketPlugin,
+  Plugin,
   PluginsOption,
   RequestContext 
 } from '../plugin';
@@ -32,7 +32,7 @@ interface RocketOption<D> {
   headers?: Headers | HeadersLiteral;
   method: HTTPMethod;
   payload?(data: D): Payload;
-  plugins?: RocketPlugin<any>[];
+  plugins?: Plugin<any>[];
   responseType?: ResponseType;
   timeout?: number;
   source: string | Source;
@@ -46,7 +46,7 @@ class Rocket<D, R> {
   #adapter: Adapter;
   #headers: Headers;
   #normalizePayload?: (data: D) => Payload;
-  #plugins: RocketPlugin<any>[];
+  #plugins: Plugin<any>[];
   #source: Source;
   constructor(options: RocketOption<D>);
   constructor(method: HTTPMethod, source: string | Source);

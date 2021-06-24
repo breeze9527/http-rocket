@@ -7,13 +7,13 @@ import {
   RocketError
 } from '../errors';
 import type {
-  RocketPlugin,
+  Plugin,
   RequestContext,
   RespondContext
 } from "../plugin";
 
 export interface PluginItem<O = any> {
-  plugin: RocketPlugin<O>;
+  plugin: Plugin<O>;
   option: O;
 }
 

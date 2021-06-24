@@ -15,14 +15,14 @@ export {
 } from './errors';
 export {
   PluginsOption,
-  RocketPlugin as Plugin,
+  Plugin,
   RequestContext,
   RespondContext
 } from './plugin';
 export {
   default as Rocket,
   default as default,
-  Payload as RocketPayload
+  Payload
 } from './rocket';
 export { default as Source } from './source';
 export { default as Path } from './source/path';
