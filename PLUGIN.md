@@ -105,7 +105,7 @@ Plugin#postRespond(context, option)
 
 ## 调用顺序
 
-不同插件间相同生命周期钩子的调用顺序与插件在`RocketOptions#plugins`中的配置顺序相反。
+不同插件间相同生命周期钩子的调用顺序与插件在`RocketOption#plugins`中的配置顺序相反。
 
 ```js
 class PluginA extends Plugin {

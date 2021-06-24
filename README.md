@@ -29,7 +29,7 @@ const Rocket = require('http-rocket').Rocket;
 const Rocket = widnow.rocket.Rocket;
 ```
 
-### 调用
+### 使用
 ```js
 // 创建实例
 const rocket = new Rocket('GET', 'http://test.com/path/to/resource');
@@ -46,7 +46,36 @@ mission.promise.then(resp => {
 mission.abort();
 ```
 
-## 实例
+传递参数
+```js
+const rocket = new Rocket({
+  method: 'GET',
+  // 通过source可以指定路径参数
+  source: 'https://my.api.server/teams/:teamId/users'
+  // 通过payload格式化send传入的参数
+  payload: ({teamId, userName}) => ({
+    // params用于替换路径中的参数
+    params: { teamId },
+    // query将会拼接在url后
+    query: { name: userName }
+  })
+});
+
+// 通过send()传递参数
+rocket.send({
+  teamId: 1,
+  userName: 'Mike'
+});
+// GET https://my.api.server/teams/1/users?name=Mike
+rocket.send({
+  teamId: 2
+});
+// GET https://my.api.server/teams/2/users
+```
+
+完整参数列表见：[RocketOption](./API.md#rocketoption)
+
+## 示例
 
 [Examples](./example)
 
@@ -62,3 +91,4 @@ mission.abort();
 - [ ] 兼容测试
 - [ ] CI/CD
 - [ ] Code style lint
+- [ ] TypeScript exapmles

@@ -58,7 +58,7 @@ one of:
 ### Rocket
 
 ##### constructor(method: [HTTPMethod](#httpmethod), source: string | [Source](#source))
-##### constructor(options: [RocketOptions](#rocketoptions))
+##### constructor(options: [RocketOption](#rocketoption))
 Rocket实例化后可重复使用，每次调用`send()`会返回不同的`mission`实例。
 
 ##### send(payload: any): [Mission](#misson)
@@ -252,7 +252,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 ---
 
-### RocketOptions
+### RocketOption
 ##### adapter?: (options: [AdapterOptions](#adapteroptions), callbacks: [AdapterCallbacks](#adaptercallbacks)) => void
 用于实际触发请求的请求器
 ##### headers?: [Headers][Headers] | {\[fieldName\]: string | string\[\]}
