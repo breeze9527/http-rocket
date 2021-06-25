@@ -60,6 +60,7 @@ Plugin#fetch(context, option, callback)
 - `context`: [\<RequestContext\>][RequestContext] 请求上下文
 - `option`: \<any\> 插件参数
 - `callback`: \<function\> 回调函数
+- Returns: \<function\> | \<undefined\> 取消器
 
 `fetch`在发送请求时执行，请求上下文在经过`request`的修改后传递给`fetch`。`fetch`钩子的主要作用是自定义从输入(`context`)到输出(`response`)的过程。
 
@@ -67,6 +68,8 @@ Plugin#fetch(context, option, callback)
 - `callback()`表示运行下一个plugin的`fetch`钩子。
 - `callback(error)`表示当前请求应该返回一个错误响应，`error`应该是[RocketError][RocketError]的实例。
 - `callback(null, response)`表示当前请求的响应为`response`，`response`应该符合[Response](./API.md#response)的结构
+
+`fetch`钩子可以返回一个函数，在用户调用`mission#cancel`时会调用这个函数。
 
 `fetch`与其他钩子不同，具有唯一性：如果一个插件中的`fetch`通过回调函数返回了错误或响应数据，便不会再执行后续插件的`fetch`钩子。
 
@@ -107,7 +110,7 @@ Plugin#postRespond(context, option)
 
 不同插件间相同生命周期钩子的调用顺序与插件在`RocketOption#plugins`中的配置顺序相反。
 
-```js
+```ts
 class PluginA extends Plugin {
   request() { /*...*/ }
   preFetch() { /*...*/ }
