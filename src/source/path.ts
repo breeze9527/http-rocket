@@ -7,73 +7,76 @@ interface PathSegment {
 const PATH_SEPARATOR = '/';
 const PARAMETER_PREFIX = ':';
 const REG_VALID_PARAM_NAME = /^[a-z]+$/i;
+const REG_EMPTY = /^\s*$/;
 function validateParameterName(name: string) {
   if (REG_VALID_PARAM_NAME.test(name) === false) {
     throw new Error(`Illegal parameter name: ${name}`);
   }
 }
-class Path {
-  /**
-   * create Path object from path string like source/of/:id
-   * @param path path string
-   */
-  static from(path: string) {
-    const segments: PathSegment[] = [];
-    for(const _str of path.split(PATH_SEPARATOR)) {
-      const str = _str.trim();
-      if (str !== '') {
-        if (str[0] === PARAMETER_PREFIX) {
-          const parameterName = str.slice(1);
-          validateParameterName(parameterName);
-          segments.push({
-            name: parameterName,
-            type: 'param'
-          });
-        } else {
-          segments.push({
-            name: str,
-            type: 'static'
-          });
-        }
-      }
+function parsePath(path: string) {
+  const segments: PathSegment[] = [];
+  for(const str of path.split(PATH_SEPARATOR)) {
+    if (REG_EMPTY.test(str)) {
+      continue;
     }
-    return new Path(segments);
+    const node: PathSegment = PARAMETER_PREFIX
+      ? {
+        name: str.slice(1),
+        type: 'param'
+      }
+      : {
+        name: str,
+        type: 'static'
+      }
+    segments.push(node);
+  }
+  return segments;
+}
+
+class Path {
+  static from(path: string) {
+    return new Path(parsePath(path));
   }
   #segments: PathSegment[] = [];
   constructor(segments: PathSegment[]) {
     this.#segments = segments.map(item => ({...item}));
   }
-  private validateItem({name, type}: PathSegment) {
-    if (type === 'param') {
+  private validateSegment(segments: PathSegment | PathSegment[]) {
+    const list = Array.isArray(segments) ? segments : [segments];
+    const existed: Record<string, boolean> = {};
+    for(const item of this.#segments) {
+      if (item.type === 'param') {
+        existed[item.name] = true;
+      }
+    }
+    for(const item of list) {
+      const name = item.name;
       validateParameterName(name);
-      if (this.#segments.some(item => name === item.name)) {
+      if (existed[name] === true) {
         throw new Error(`Duplicate name: ${name}`);
+      } else {
+        existed[name] = true;
       }
     }
   }
   get segments() {
     return this.#segments.map(item => ({...item}));
   }
-  insert(item: PathSegment, index?: number): void;
-  insert(type: PathSegmentType, name: string, index?: number): void;
-  insert(_itemOrType: PathSegment | PathSegmentType, _indexOrName?: number | string, _index?: number): void {
-    let item: PathSegment;
-    let index: number = 0;
-    if (typeof _itemOrType === 'string') {
-      item = {
-        name: _indexOrName as string,
-        type: _itemOrType
-      };
-      index = _index || 0;
-    } else {
-      item = _itemOrType;
-      index = (_indexOrName as number) || 0;
+  insert(node: PathSegment | PathSegment[] | string, index: number = 0): void {
+    const segments = typeof node === 'string'
+      ? parsePath(node)
+      : Array.isArray(node)
+        ? node
+        : [node];
+    if (segments.length === 0) {
+      return;
     }
-    this.validateItem(item);
-    const segments = this.#segments.slice();
+    this.validateSegment(segments);
+    const rawSegments = this.#segments.slice();
     const insertIndex = Math.max(Math.min(index, segments.length), 0);
-    segments.splice(insertIndex, 0, item);
-    this.#segments = segments;
+    this.#segments = rawSegments.slice(0, insertIndex)
+      .concat(segments)
+      .concat(rawSegments.slice(insertIndex));
   }
   remove(filter: number | ((item: PathSegment, index: number, segments: PathSegment[]) => boolean)) {
     let segments = this.#segments;
@@ -84,17 +87,17 @@ class Path {
     }
     this.#segments = segments;
   }
-  append(item: PathSegment): void;
-  append(type: PathSegmentType, name: string): void;
-  append(_itemOrType: PathSegment | PathSegmentType, _name?: string): void {
-    const item: PathSegment = typeof _itemOrType === 'string' && typeof _name === 'string'
-      ? {
-        name: _name,
-        type: _itemOrType
-      }
-      : _itemOrType as PathSegment
-    this.validateItem(item);
-    this.#segments = this.#segments.concat(item);
+  append(node: PathSegment | PathSegment[] | string): void {
+    const segments = typeof node === 'string'
+      ? parsePath(node)
+      : Array.isArray(node)
+        ? node
+        : [node];
+    if (segments.length === 0) {
+      return;
+    }
+    this.validateSegment(segments);
+    this.#segments = this.#segments.concat(segments);
   }
   toString() {
     let result: string[] = [];
@@ -121,7 +124,7 @@ class Path {
             throw new Error(`Missing required parameter of path: ${this.toString()}`);
           }
           if (typeof paramValue !== 'string' && typeof paramValue !== 'number') {
-            throw new Error(`Unexpected value type of pamameter: ${name} in ${this.toString()}`);
+            throw new Error(`Unexpected type of parameter: ${name} in ${this.toString()}`);
           }
           result.push(String(paramValue));
         }

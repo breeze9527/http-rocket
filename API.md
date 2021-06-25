@@ -208,17 +208,20 @@ Path.from('users/:userId');
 
 #### \<readonly\>segments: [PathSegment](#pathsegment)\[\]
 
-#### insert(item: [PathSegment](#pathsegment)): void
-#### insert(type: [PathSegmentType](#pathsegmenttype), name: string, index?: number): void
+#### insert(node: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string): void
 在`segments`指定位置前插入节点，`index`默认为`0`。
+
+`node`可以是路径字符串，见`Path.from`。
 
 #### remove(index: number): void
 #### remove(filter: (item: [PathSegment](#pathsegment), index: number, segments: [PathSegment](#pathsegment)\[\]) => boolean): void
 删除`segments`指定位置的节点，传入参数类型为整数时表示删除指定`index`的节点，传入函数时表示删除所有函数返回结果为`false`的值。
 
-#### append(item: [PathSegment](#pathsegment)): void
-#### append(type: [PathSegmentType](#pathsegmenttype), name: string): void
+#### append(item: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string): void
 在`segments`末尾插入节点。
+
+`node`可以是路径字符串，见`Path.from`。
+
 #### toString(): string
 输出path对象的字面量。
 #### clone(): [Path](#path)
