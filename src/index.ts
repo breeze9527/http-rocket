@@ -27,8 +27,17 @@ export {
 export { default as Source } from './source';
 export { default as Path } from './source/path';
 export type {
-  mergeHeaders,
   HeadersLiteral,
   QueryLiteral
 } from './util';
+import {
+  mergeHeaders,
+  normalizeHeadersLiteral,
+  normalizeQueryLiteral
+} from './util';
+export const util = {
+  mergeHeaders,
+  normalizeHeadersLiteral,
+  normalizeQueryLiteral
+};
 export const version = process.env.npm_package_version!;
