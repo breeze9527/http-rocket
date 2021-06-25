@@ -27,6 +27,7 @@ export {
 export { default as Source } from './source';
 export { default as Path } from './source/path';
 export type {
+  mergeHeaders,
   HeadersLiteral,
   QueryLiteral
 } from './util';

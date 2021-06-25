@@ -373,7 +373,13 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 #####
 
+## Util functions
+
 ---
+
+##### mergeHeaders(base: [Headers][Headers], source: [Headers][Headers] | {\[fieldName\]: string | string\[\]}): [Headers][Headers]
+
+合并headers对象
 
 - `readonly attr: xxx`表示prop只读
 - `attr?: xxx`表示attr非必选(可能为`undefined`)

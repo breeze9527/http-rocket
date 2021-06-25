@@ -1,7 +1,7 @@
 export type HeadersLiteral = Record<string, string | string[]>;
-export function normalizeHeadersLiteral(headersObject: HeadersLiteral) {
+export function normalizeHeadersLiteral(literal: HeadersLiteral) {
   const headers = new Headers();
-  for (const [key, value] of Object.entries(headersObject)) {
+  for (const [key, value] of Object.entries(literal)) {
     if (Array.isArray(value)) {
       headers.delete(key); // clean current value
       for (const item of value) {
@@ -35,9 +35,9 @@ export function mergeHeaders(base: Headers, source: Headers | HeadersLiteral) {
 }
 
 export type QueryLiteral = Record<string, string | number | (string | number)[]>;
-export function normalizeQueryLiteral(queryObject: QueryLiteral) {
+export function normalizeQueryLiteral(literal: QueryLiteral) {
   const searchParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(queryObject)) {
+  for (const [key, value] of Object.entries(literal)) {
     if (Array.isArray(value)) {
       for (const item of value) {
         searchParams.append(key, String(item));
