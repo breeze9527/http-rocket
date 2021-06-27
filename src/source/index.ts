@@ -11,22 +11,22 @@ import {
 const REG_MATCH_HREF = /^(https?):\/\/(?:([^:@\/]+)(?::([^:@\/]+))?@)?([^\/:]+)(?::(\d+))?(?:\/([^?]+)*)?$/;
 //                         protocol     username     password           host     port
 type Protocol = 'http' | 'https';
-interface SourceOption {
+interface SourceOption<P extends string> {
   hostName: string;
   port?: number;
-  path?: string | Path;
+  path?: string | Path<P>;
   protocol: Protocol;
   userName?: string;
   password?: string;
 }
-class Source {
-  #path: Path;
+class Source<P extends string = string> {
+  #path: Path<P>;
   #protocol: Protocol;
   #hostName: string;
   #userName: string;
   #port?: number;
   #password: string;
-  static from(sourceLiteral: string) {
+  static from<P extends string = string>(sourceLiteral: string) {
     const regMatchResult = REG_MATCH_HREF.exec(sourceLiteral);
     if (regMatchResult === null) {
       throw new Error(`Illegal source format: ${sourceLiteral}`);
@@ -40,7 +40,7 @@ class Source {
         port,
         path
       ] = regMatchResult;
-      return new Source({
+      return new Source<P>({
         hostName,
         port: port === '' ? undefined : parseInt(port, 10),
         path,
@@ -50,7 +50,7 @@ class Source {
       });
     }
   }
-  constructor(options: SourceOption) {
+  constructor(options: SourceOption<P>) {
     this.#protocol = options.protocol
     this.#userName = options.userName ?? '';
     this.#password = options.password ?? '';
@@ -58,49 +58,58 @@ class Source {
     this.#port = options.port;
     const path = options.path ?? '';
     if (typeof path === 'string') {
-      this.#path = Path.from(path);
+      this.#path = Path.from<P>(path);
     } else {
       this.#path = path;
     }
+  }
+  private extend<NP extends string = P>(option: Partial<SourceOption<NP>>) {
+    return new Source<NP>({
+      hostName: this.#hostName,
+      password: this.#password,
+      port: this.#port,
+      protocol: this.#protocol,
+      userName: this.#userName,
+      path: this.#path.clone() as Path<NP> | undefined,
+      ...option,
+    });
   }
 
   get protocol() {
     return this.#protocol;
   }
   setProtocol(protocol: Protocol) {
-    this.#protocol = protocol;
+    return this.extend<P>({ protocol });
   }
   get path() {
     return this.#path;
   }
-  setPath(path: Path | string) {
-    this.#path = typeof path === 'string'
-      ? Path.from(path)
-      : path;
+  setPath<NP extends string = string>(path: Path<NP> | string) {
+    return this.extend<NP>({ path });
   }
   get userName() {
     return this.#userName ?? '';
   }
-  setUserName(username: string = '') {
-    this.#userName = username;
+  setUserName(userName: string = '') {
+    return this.extend<P>({ userName });
   }
   get password() {
     return this.#password ?? '';
   }
   setPassword(password: string = '') {
-    this.#password = password;
+    return this.extend<P>({ password });
   }
   get port() {
     return this.#port;
   }
   setPort(port?: number) {
-    return this.#port = port;
+    return this.extend<P>({ port });
   }
   get hostName() {
     return this.#hostName;
   }
-  setHostName() {
-    return this.#hostName;
+  setHostName(hostName: string) {
+    return this.extend<P>({ hostName });
   }
 
   // computed accessors
@@ -122,7 +131,7 @@ class Source {
     }
     result += hostName;
     if (port !== undefined) {
-      result+= ':' + port;
+      result += ':' + port;
     }
     return result;
   }
@@ -139,13 +148,16 @@ class Source {
         hostname,
         port
       ] = regMatchResult;
-      this.#protocol = protocol as Protocol;
-      this.#userName = userName;
-      this.#password = password;
-      this.#hostName = hostname;
+      const options: Partial<SourceOption<P>> = {
+        protocol: protocol as Protocol,
+        userName: userName,
+        password: password,
+        hostName: hostname
+      };
       if (port) {
-        this.#port = parseInt(port, 10);
+        options.port = parseInt(port, 10);
       }
+      return this.extend<P>(options);
     }
   }
 
@@ -162,9 +174,9 @@ class Source {
     return result;
   }
 
-  toURL(param: Record<string, string | number> = {}, query: URLSearchParams | QueryLiteral = {}) {
+  toURL(param?: Record<P, string | number>, query: URLSearchParams | QueryLiteral = {}) {
     let result = this.origin;
-    const resultPath =  this.#path.normalize(param);
+    const resultPath = this.#path.normalize(param);
     if (resultPath !== '') {
       result += '/' + resultPath;
     }
@@ -178,14 +190,7 @@ class Source {
   }
 
   clone() {
-    return new Source({
-      hostName: this.#hostName,
-      password: this.#password,
-      path: this.#path.clone(),
-      port: this.#port,
-      protocol: this.#protocol,
-      userName: this.#userName
-    });
+    return this.extend<P>({});
   }
 }
 

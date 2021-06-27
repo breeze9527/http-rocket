@@ -159,26 +159,45 @@ http://user:password@my.api.host:port/path/to/source/:sourceId
 
 e.g. `http://my.api.host/path/to/source/:sourceId`
 
+`Source`实例是一个不可变（immutable）的对象，对实例的更改操作都会返回一个新的`Source`实例。
+
 #### constructor(options: [SourceOption](#sourceoption))
+
 #### \<readonly\>protocol: [HTTPProtocol](#httpprotocol)
-#### setProtocol(protocol: [HTTPProtocol](#httpprotocol)): void
+
+#### setProtocol(protocol: [HTTPProtocol](#httpprotocol)): [Source](#source)
+
 #### \<readonly\>path: Path
-#### setPath(path: Path | string): void
+
+#### setPath(path: Path | string): [Source](#source)
+
 #### \<readonly\>userName: string
-#### setUserName(uesrname?: string): void
+
+#### setUserName(uesrname?: string): [Source](#source)
+
 #### \<readonly\>password: string
-#### setPassword(password?: string): void
+
+#### setPassword(password?: string): [Source](#source)
+
 #### \<readonly\>port?: number
-#### setPort(port?: number): void
+
+#### setPort(port?: number): [Source](#source)
+
 #### \<readonly\>hostName: string
-#### setHostName(hostName: string): void
+
+#### setHostName(hostName: string): [Source](#source)
+
 #### \<readonly\>origin: string
 `protocol` + `userName` + `password` + `hostName` + `port`的组合。
-#### setOrigin(origin: string): void
+
+#### setOrigin(origin: string): [Source](#source)
 设置origin，会自动更新关联的属性。
+
 #### toString(): string
+
 #### toURL(param?: [ParamLiteral](#paramliteral), query?: [URLSearchParams][URLSearchParams] | [QueryLiteral](#queryliteral)): string
 生成URL，当path包含参数时需要在param中传入对应的值。
+
 #### clone(): [Source](#source)
 返回与当前实例属性相同的副本
 
@@ -197,6 +216,10 @@ source.toURL(param, query); // http://test.com/1/2?gender=male
 ---
 
 ### Path 
+
+`Path`作为[Source](#source)的一部分，用来表示路径信息。
+
+`Path`实例是一个不可变（immutable）的对象，对实例的修改都会返回一个新的实例。
 
 #### constructor(segments: [PathSegment](#pathsegment)\[\])
 
@@ -224,6 +247,7 @@ Path.from('users/:userId');
 
 #### toString(): string
 输出path对象的字面量。
+
 #### clone(): [Path](#path)
 返回与当前实例属性相同的副本
 ```js
@@ -244,9 +268,12 @@ path.normalize({userId: 1}); // users/1
 
 ### RocketError
 rocket正常运行过程中产生的错误对象，使用`RocketError`表示*可控*的错误，区别于由bug引发的异常(如`TypeError`，`ReferenceError`等)，便于后续业务的处理。
+
 #### constructor(message: string)
+
 #### name: string
 错误名称，`RocketError#name`固定为`'RocketError'`
+
 #### message: string
 错误描述
 
@@ -292,12 +319,16 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 #### \<readonly\>method: [HTTPMethod](#httpmethod)
 当前请求使用的HTTPMethod。
+
 #### \<readonly\>id: string
 请求的唯一标识。
+
 #### \<readonly\>url: string
 请求的目标URL。
+
 #### \<readonly\>source: [Source](#source)
 请求使用的Source对象。
+
 #### abort(): void
 取消当前请求，请求被取消后会触发`error`事件，事件参数为[AbortError](#aborterror)的实例。
 
@@ -306,14 +337,22 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 ### Plugin
 
 #### constructor(name: string)
+
 #### \<readonly\>name: string
 插件的名称，即构造函数传入的参数。
+
 #### preRequest?(context: [RequestContext](#requestcontext), option: any)
+
 #### request?(context: [RequestContext](#requestcontext), option: any)
+
 #### preFetch?(context: [RequestContext](#requestcontext), option: any)
+
 #### fetch?(context: [RequestContext](#requestcontext), option: any, callback: (error?: RocketError | null, response?: [Response](#response)) => void)
+
 #### postFetch?(context: [RespondContext](#respondcontext), option: any)
+
 #### respond?(context: [RespondContext](#respondcontext), option: any)
+
 #### postRespond?(context: [RespondContext](#respondcontext), option: any)
 
 ---
@@ -321,16 +360,20 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 ## Interface
 
 ### PathSegment
+
 #### name: string
 静态路径节点字符串或路径参数的名称(不包含前缀的`:`)。
+
 #### type: [PathSegmentType](#pathsegmenttype)
 节点类型。
 
 ---
 
 ### RocketOption
+
 #### adapter?: (option: [AdapterOption](#adapteroption), callback: [AdapterCallback](#adaptercallback)) => void
 用于实际触发请求的请求器
+
 #### headers?: [Headers][Headers] | [HeadersLiteral](#headersliteral)
 发起请求时携带的头信息，支持传入[Headers][Headers]类的实例或一个普通对象(plain object)，当传入普通对象时对象的key表示头部的字段名，value为字段的值，可以为字符串或字符串数组，在设置headers时字符串数组会使用`';'`合并成用于实际发送的字符串。
 
@@ -358,15 +401,20 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 ### Response
 表示请求成功后返回的响应信息
+
 #### body: any
 响应返回的数据，具体类型取决于`responseType`与使用的插件。
+
 #### headers: [Headers][Headers]
 响应的头部信息
+
 #### status: number
 响应的HTTP Code
+
 ---
 
 ### Payload
+
 #### params?: [ParamLiteral](#paramliteral)
 路由路径参数中对应的参数值，`paramName`为`source`中设置的参数名称(`PathSegment#type`)
 
@@ -389,34 +437,51 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 ---
 
 ### SourceOption
+
 #### hostName: string
+
 #### port?: number
+
 #### path?: string | Path
+
 #### protocol: [HTTPProtocol](#httpprotocol)
+
 #### userName?: string
+
 #### password?: string
 
 ---
 
 ### AdapterOption
+
 #### body: [BodyType](#bodytype)
+
 #### headers: [Headers][Headers]
+
 #### method: [HTTPMethod](#httpmethod)
+
 #### responseType: [ResponseType](#ResponseType)
+
 #### timeout: number
+
 #### url: string
 
 ---
 
 ### AdapterCallback
+
 #### progress(event: [ProgressEvent][ProgressEvent]): void
 接收响应时执行回调，在下载过程中可能会被执行多次。
+
 #### success(data: [Response](#response)): void
 接收响应且解析成功后执行，HTTP code不影响请求的状态。
+
 #### error(error: [RocketError](#rocketerror)): void
 发送请求失败或解析返回数据失败时执行。
+
 #### uploadProgress(event: [ProgressEvent][ProgressEvent]): void
 与`progress`相似，但在上传过程中执行。
+
 #### uploadSuccess(): void
 请求体上传成功后执行。
 
@@ -424,26 +489,39 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 ### RequestContext
 请求上下文，在插件中使用，用于记录或操作请求参数。
+
 #### body: [BodyType](#bodytype)
+
 #### headers: [Headers][Headers]
+
 #### id: string
+
 #### method: [HTTPMethod](#httpmethod)
+
 #### params: [ParamLiteral](#paramliteral)
+
 #### query: [URLSearchParams][URLSearchParams]
+
 #### responseType: [ResponseType](#responsetype)
+
 #### source: [Source](#source)
+
 #### timeout: number
 
 ---
 
 ### RespondContext
 响应上下文，在插件中使用，用于记录或改变响应结果。
+
 #### error: [RocketError](#rocketerror) | null
 响应的错误对象
+
 #### url: string
 请求的完整url
+
 #### request: [RequestContext](#requestcontext)
 请求上下文
+
 #### response: [Response](#response) | null
 响应数据
 
