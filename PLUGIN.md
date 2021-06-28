@@ -69,7 +69,7 @@ Plugin#fetch(context, option, callback)
 - `callback(error)`表示当前请求应该返回一个错误响应，`error`应该是[RocketError][RocketError]的实例。
 - `callback(null, response)`表示当前请求的响应为`response`，`response`应该符合[Response](./API.md#response)的结构
 
-`fetch`钩子可以返回一个函数，在用户调用`mission#cancel`时会调用这个函数。
+`fetch`钩子可以返回一个函数，在用户调用`mission.cancel()`时会调用这个函数。
 
 `fetch`与其他钩子不同，具有唯一性：如果一个插件中的`fetch`通过回调函数返回了错误或响应数据，便不会再执行后续插件的`fetch`钩子。
 

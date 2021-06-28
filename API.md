@@ -112,7 +112,7 @@ one of:
   [paramName: string]: string | number;
 }
 ```
-路劲参数对象的字面量表示
+路径参数对象的字面量表示
 
 ---
 
@@ -147,12 +147,12 @@ http://user:password@my.api.host:port/path/to/source/:sourceId
 1---   2--- 3------- 4---------- 5--- 6-----------------------
 ```
 
-1. protocol: https或http,不包含`'://'`。
+1. protocol: https或http,不包含`://`。
 2. user: 用户名，可选，默认为空字符串。
 3. password: 密码，可选，默认为空字符串。
 4. host: 服务host。
 5. port: 端口，可选。
-6. path：路径，可选，可附带参数，不包含前缀的`'/'`。
+6. path：路径，可选，可附带参数，不包含前缀的`/`。
 
 #### Source.from(sourceLiteral: string): Source
 通过一个完整的url字符串创建Source对象，url至少应该包含protocol, host。
@@ -223,25 +223,25 @@ source.toURL(param, query); // http://test.com/1/2?gender=male
 
 #### constructor(segments: [PathSegment](#pathsegment)\[\])
 
-#### Path.from(path: string): Path
-通过字符串创建`Path`对象，字符串不包含前缀的`\/`，可以包含路径参数。
+#### Path.from(path: string): [Path](#path)
+通过字符串创建`Path`对象，字符串不包含前缀的`/`，可以包含路径参数。
 ```js
 Path.from('users/:userId');
 ```
 
 #### \<readonly\>segments: [PathSegment](#pathsegment)\[\]
 
-#### insert(node: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string): void
+#### insert(node: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string, index?: number): [Path](#path)
 在`segments`指定位置前插入节点，`index`默认为`0`。
 
 `node`可以是路径字符串，见`Path.from`。
 
-#### remove(index: number): void
-#### remove(filter: (item: [PathSegment](#pathsegment), index: number, segments: [PathSegment](#pathsegment)\[\]) => boolean): void
+#### remove(index: number): [Path](#path)
+#### remove(filter: (item: [PathSegment](#pathsegment), index: number, segments: [PathSegment](#pathsegment)\[\]) => boolean): [Path](#path)
 删除`segments`指定位置的节点，传入参数类型为整数时表示删除指定`index`的节点，传入函数时表示删除所有函数返回结果为`false`的值。
 
-#### append(item: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string): void
-在`segments`末尾插入节点。
+#### append(item: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string): [Path](#path)
+在`segments`末尾添加节点。
 
 `node`可以是路径字符串，见`Path.from`。
 
@@ -257,7 +257,7 @@ const path = new Path([
 ]);
 path.toString(); // users/:userId
 ```
-#### normalize(params?: [ParamLiteral](#paramliteral)): string
+#### normalize(param?: [ParamLiteral](#paramliteral)): string
 替换路径中的参数并返回路径字符串，返回的字符串不包含前缀的`/`。
 ```js
 const path = Path.from('users/:userId');
@@ -347,7 +347,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 #### preFetch?(context: [RequestContext](#requestcontext), option: any)
 
-#### fetch?(context: [RequestContext](#requestcontext), option: any, callback: (error?: RocketError | null, response?: [Response](#response)) => void)
+#### fetch?(context: [RequestContext](#requestcontext), option: any, callback: (error?: [RocketError](#rocketerror) | null, response?: [Response](#response)) => void)
 
 #### postFetch?(context: [RespondContext](#respondcontext), option: any)
 
@@ -375,7 +375,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 用于实际触发请求的请求器
 
 #### headers?: [Headers][Headers] | [HeadersLiteral](#headersliteral)
-发起请求时携带的头信息，支持传入[Headers][Headers]类的实例或一个普通对象(plain object)，当传入普通对象时对象的key表示头部的字段名，value为字段的值，可以为字符串或字符串数组，在设置headers时字符串数组会使用`';'`合并成用于实际发送的字符串。
+发起请求时携带的头信息，支持传入[Headers][Headers]类的实例或表示`Headers`实例的字面量表示，当传入字面量时对象的`key`表示头部的字段名，`value`为字段的值。
 
 详情见:[Headers#get()][HeadersGet]。
 
@@ -389,10 +389,10 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 插件列表，详见[PLUGIN.md](./PLUGIN.md)。
 
 #### responseType?: [ResponseType](#responsetype)
-指定返回的数据格式。与[XMLHttpRequest.ResponseType][XHRResponseType]作用相同，唯一区别是当`responseType`为`json`且解析响应失败时会触发`error`事件，事件对象为[ParseError](#parseerror)的实例。
+指定返回的数据格式。与[XMLHttpRequest.ResponseType][XHRResponseType]作用相同，唯一区别是当`responseType`为`json`且解析响应失败时`misson`实例会触发`error`事件，事件参数为[ParseError](#parseerror)的实例。
 
 #### timeout?: number
-请求的最大等待时间，超过指定时间时请求失败，`mission`触发`error`事件，事件对象为[TimeoutError](#timeouterror)的实例。
+请求的最大等待时间，超过指定时间时请求失败，`mission`触发`error`事件，事件参数为[TimeoutError](#timeouterror)的实例。
 
 #### source: [Source](#source)
 请求的目标资源，与payload配合生成最终请求的实际url。
