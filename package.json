@@ -1,7 +1,14 @@
 {
   "name": "http-rocket",
+  "description": "A scalable http client",
   "version": "0.0.1",
-  "main": "dist/cjs/rocket.js",
+  "keywords": [
+    "http",
+    "promise",
+    "xhr",
+    "ajax"
+  ],
+  "main": "dist/cjs/http-rocket.js",
   "author": "breeze9527 <breeze9527@gmail.com>",
   "license": "MIT",
   "devDependencies": {
@@ -30,11 +37,9 @@
   },
   "scripts": {
     "build": "gulp build",
-    "build:types": "gulp buildDeclaration",
-    "build:bundle": "gulp bundle",
     "clean": "gulp clean",
-    "example": "node example/server/index.js",
-    "rollup": "rollup -c"
+    "bundle": "gulp bundle",
+    "example": "node example/server/index.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.14.6"

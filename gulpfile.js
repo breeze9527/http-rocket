@@ -4,29 +4,27 @@ const path = require('path');
 const cwd = process.cwd();
 const {
   buildDeclaration,
-  bundleCJS,
-  bundleUMD,
-  bundleESM
-} = require('./build/tasks');
+  buildCJS,
+  buildUMD,
+  buildESM
+} = require('./task/build');
+const {
+  bundle
+} = require('./task/bundle');
 
 function cleanDist() {
   return del(path.join(cwd, './dist'));
 }
 
 exports.clean = cleanDist;
-exports.buildDeclaration = buildDeclaration;
-exports.bundleCJS = bundleCJS;
-exports.bundleESM = bundleESM;
-exports.bundleUMD = bundleUMD;
-exports.bundle = gulp.parallel(
-  bundleCJS,
-  bundleESM,
-  bundleUMD,
-);
+
 exports.build = gulp.series(
   cleanDist,
   gulp.parallel(
     buildDeclaration,
-    exports.bundle
+    buildCJS,
+    buildESM,
+    buildUMD,
   )
 );
+exports.bundle = bundle;
