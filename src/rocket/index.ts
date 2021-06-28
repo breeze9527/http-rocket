@@ -21,11 +21,11 @@ import {
 } from '../plugin';
 
 export interface Payload<P extends string> {
-  params?: Record<P, string | number>;
+  param?: Record<P, string | number>;
   query?: URLSearchParams | QueryLiteral;
   body?: BodyType;
   headers?: Headers | HeadersLiteral | ((header: Headers) => Headers);
-  pluginOptions?: PluginsOption;
+  pluginOption?: PluginsOption;
 }
 interface RocketOption<D, P extends string> {
   adapter?: Adapter; // XHR, JSONP, http-client(node.js)
@@ -95,7 +95,7 @@ class Rocket<D = any, R = any, P extends string = string> {
     const {
       body = null,
       headers: payloadHeaders = {},
-      params = {},
+      param = {},
       query: payloadQuery = {}
     } = payload;
     const headers = typeof payloadHeaders === 'function'
@@ -109,7 +109,7 @@ class Rocket<D = any, R = any, P extends string = string> {
       headers,
       id: id.toString(),
       method: this.#method,
-      params,
+      param,
       query,
       responseType: this.#responseType,
       timeout: this.#timeout,
@@ -125,7 +125,7 @@ class Rocket<D = any, R = any, P extends string = string> {
     return new Mission<R>(
       plugins.map(plugin => ({
         plugin,
-        option: payload.pluginOptions?.[plugin.name]
+        option: payload.pluginOption?.[plugin.name]
       })),
       requestContext,
       this.#adapter

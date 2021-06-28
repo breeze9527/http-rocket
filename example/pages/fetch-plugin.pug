@@ -102,7 +102,7 @@ block script
       source: location.origin + '/api/fetch-plugin/server-time',
       payload: function(disableThrottle) {
         return {
-          pluginOptions: {
+          pluginOption: {
             throttle: disableThrottle
           }
         };

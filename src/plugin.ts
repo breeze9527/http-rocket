@@ -12,7 +12,7 @@ export interface RequestContext {
   headers: Headers;
   id: string;
   method: HTTPMethod;
-  params: Record<string, string | number>;
+  param: Record<string, string | number>;
   query: URLSearchParams;
   responseType: ResponseType;
   source: Source;

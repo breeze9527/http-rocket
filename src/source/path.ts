@@ -122,14 +122,13 @@ class Path<P extends string = string> {
     }
     return result.join(PATH_SEPARATOR);
   }
-  normalize(params?: Record<P, string | number>) {
+  normalize(param?: Record<P, string | number>) {
     let result: string[] = [];
     for (let segment of this.#segments) {
       if (segment.type === 'static') {
         result.push(segment.name);
       } else {
-        const paramValue = params?.[segment.name];
-        // const paramValue = params?.[name];
+        const paramValue = param?.[segment.name];
         if (paramValue === undefined) {
           throw new Error(`Missing required parameter of path: ${this.toString()}`);
         }

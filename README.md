@@ -54,8 +54,8 @@ const rocket = new Rocket({
   source: 'https://my.api.server/teams/:teamId/users'
   // 通过payload格式化send传入的参数
   payload: ({teamId, userName}) => ({
-    // params用于替换路径中的参数
-    params: { teamId },
+    // param用于替换路径中的参数
+    param: { teamId },
     // query将会拼接在url后
     query: { name: userName }
   })

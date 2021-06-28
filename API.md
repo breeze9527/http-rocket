@@ -415,7 +415,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 ### Payload
 
-#### params?: [ParamLiteral](#paramliteral)
+#### param?: [ParamLiteral](#paramliteral)
 路由路径参数中对应的参数值，`paramName`为`source`中设置的参数名称(`PathSegment#type`)
 
 #### query?: [URLSearchParams][URLSearchParams] | [QueryLiteral](#queryliteral)
@@ -431,7 +431,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 - `Payload#headers`为函数时，接受`RocketOption#headers`作为参数，并使用函数返回的[Headers][Headers]实例作为请求的头部。
 - `Payload#headers`为[Headers][Headers]实例或是[HeadersLiteral](#headersliteral)时，使用`util.mergeHeaders(RocketOption#headers, Payload#headers)`合并生成请求头部。
 
-#### pluginOptions?: {\[pluginName\]: any}
+#### pluginOption?: {\[pluginName\]: any}
 传递给插件的选项，`pluginName`与对应选项的值类型由插件自定义。
 
 ---
@@ -498,7 +498,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 #### method: [HTTPMethod](#httpmethod)
 
-#### params: [ParamLiteral](#paramliteral)
+#### param: [ParamLiteral](#paramliteral)
 
 #### query: [URLSearchParams][URLSearchParams]
 

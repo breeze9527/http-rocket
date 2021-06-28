@@ -42,7 +42,7 @@ class Mission<D> extends EventEmitter {
     this.id = fetchContext.id;
     this.source = fetchContext.source;
     this.url = fetchContext.source.toURL(
-      fetchContext.params,
+      fetchContext.param,
       fetchContext.query
     );
     

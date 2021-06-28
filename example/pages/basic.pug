@@ -37,7 +37,7 @@ block script
       responseType: 'json',
       payload: function(data) {
         return {
-          params: {groupId: data.groupId},
+          param: {groupId: data.groupId},
           query: {name: data.name}
         };
       }
