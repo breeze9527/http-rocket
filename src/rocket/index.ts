@@ -20,38 +20,38 @@ import {
   RequestContext 
 } from '../plugin';
 
-export interface Payload {
-  params?: Record<string, string | number>;
+export interface Payload<P extends string> {
+  params?: Record<P, string | number>;
   query?: URLSearchParams | QueryLiteral;
   body?: BodyType;
   headers?: Headers | HeadersLiteral | ((header: Headers) => Headers);
   pluginOptions?: PluginsOption;
 }
-interface RocketOption<D> {
+interface RocketOption<D, P extends string> {
   adapter?: Adapter; // XHR, JSONP, http-client(node.js)
   headers?: Headers | HeadersLiteral;
   method: HTTPMethod;
-  payload?(data: D): Payload;
+  payload?(data: D): Payload<P>;
   plugins?: Plugin<any>[];
   responseType?: ResponseType;
   timeout?: number;
-  source: string | Source;
+  source: string | Source<P>;
 }
 
 let nextId = 0;
-class Rocket<D, R> {
+class Rocket<D = any, R = any, P extends string = string> {
   #method: HTTPMethod;
   #responseType: ResponseType;
   #timeout: number;
   #adapter: Adapter;
   #headers: Headers;
-  #normalizePayload?: (data: D) => Payload;
+  #normalizePayload?: (data: D) => Payload<P>;
   #plugins: Plugin<any>[];
-  #source: Source;
-  constructor(options: RocketOption<D>);
-  constructor(method: HTTPMethod, source: string | Source);
-  constructor(_optionsOrMethod: RocketOption<D> | HTTPMethod, _src?: string | Source) {
-    const options: RocketOption<D> = typeof _optionsOrMethod === 'string'
+  #source: Source<P>;
+  constructor(options: RocketOption<D, P>);
+  constructor(method: HTTPMethod, source: string | Source<P>);
+  constructor(_optionsOrMethod: RocketOption<D, P> | HTTPMethod, _src?: string | Source<P>) {
+    const options: RocketOption<D, P> = typeof _optionsOrMethod === 'string'
       ? {
         method: _optionsOrMethod,
         source: _src!
@@ -79,10 +79,10 @@ class Rocket<D, R> {
     if (source === undefined) {
       throw new Error('Missing required option: source');
     } else {
-      this.#source = typeof source === 'string' ? Source.from(source) : source;
+      this.#source = typeof source === 'string' ? Source.from<P>(source) : source;
     }
   }
-  private normalizePayload(data: D): Payload {
+  private normalizePayload(data: D): Payload<P> {
     const source = this.#source;
     const normalizer = this.#normalizePayload;
     if (data !== undefined && normalizer === undefined) {
@@ -90,7 +90,7 @@ class Rocket<D, R> {
     }
     return normalizer?.(data) ?? {}
   }
-  private createRequestContext(payload: Payload): RequestContext {
+  private createRequestContext(payload: Payload<P>): RequestContext {
     const id = nextId ++;
     const {
       body = null,
