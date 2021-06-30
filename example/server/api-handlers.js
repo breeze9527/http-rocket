@@ -93,10 +93,12 @@ module.exports = {
     }
   },
   '/fetch-plugin/server-time': {
-    get: {
-      timeout: 3000,
-      status: 200,
-      body: Date.now().toString()
+    get: (req, res) => {
+      setTimeout(() => {
+        res
+          .status(200)
+          .send(Date.now().toString())
+      }, 3000);
     }
   },
   '/header': {
