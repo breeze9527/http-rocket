@@ -10,14 +10,13 @@ import {
   HeadersLiteral,
   QueryLiteral,
   normalizeHeadersLiteral,
-  normalizeQueryLiteral,
   mergeHeaders
 } from '../util';
 import Mission from './mission';
 import {
   Plugin,
   PluginsOption,
-  RequestContext 
+  EditableRocketContext
 } from '../plugin';
 
 export interface Payload<P extends string> {
@@ -79,7 +78,7 @@ class Rocket<D = any, R = any, P extends string = string> {
     if (source === undefined) {
       throw new Error('Missing required option: source');
     } else {
-      this.#source = typeof source === 'string' ? Source.from<P>(source) : source;
+      this.#source = typeof source === 'string' ? new Source<P>(source) : source;
     }
   }
   private normalizePayload(data: D): Payload<P> {
@@ -90,39 +89,40 @@ class Rocket<D = any, R = any, P extends string = string> {
     }
     return normalizer?.(data) ?? {}
   }
-  private createRequestContext(payload: Payload<P>): RequestContext {
+  private createContext(payload: Payload<P>): EditableRocketContext<R, P> {
     const id = nextId ++;
     const {
       body = null,
-      headers: payloadHeaders = {},
-      param = {},
-      query: payloadQuery = {}
+      headers: payloadHeaders = {}
     } = payload;
     const headers = typeof payloadHeaders === 'function'
       ? payloadHeaders(this.#headers)
       : mergeHeaders(this.#headers, payloadHeaders);
-    const query = payloadQuery instanceof URLSearchParams
-      ? payloadQuery
-      : normalizeQueryLiteral(payloadQuery);
+    const source = this.#source;
     return {
-      body,
-      headers,
       id: id.toString(),
-      method: this.#method,
-      param,
-      query,
-      responseType: this.#responseType,
-      timeout: this.#timeout,
-      source: this.#source.clone()
+      source,
+      request: Object.freeze({
+        body,
+        headers,
+        method: this.#method,
+        responseType: this.#responseType,
+        timeout: this.#timeout,
+        url: source.toURL(payload.param, payload.query)
+      }),
+      respond: Object.freeze({
+        error: null,
+        response: null
+      })
     };
   }
 
   send(data: D) {
     const payload = this.normalizePayload(data);
-    const requestContext = this.createRequestContext(payload);
+    const requestContext = this.createContext(payload);
     const plugins = this.#plugins.slice();
     plugins.reverse();
-    return new Mission<R>(
+    return new Mission<R, P>(
       plugins.map(plugin => ({
         plugin,
         option: payload.pluginOption?.[plugin.name]

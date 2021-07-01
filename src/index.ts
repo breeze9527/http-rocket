@@ -17,7 +17,8 @@ export {
   PluginsOption,
   Plugin,
   RequestContext,
-  RespondContext
+  RespondContext,
+  RocketContext
 } from './plugin';
 export {
   default as Rocket,
@@ -25,7 +26,6 @@ export {
   Payload
 } from './rocket';
 export { default as Source } from './source';
-export { default as Path } from './source/path';
 export type {
   HeadersLiteral,
   QueryLiteral
@@ -40,4 +40,4 @@ export const util = {
   normalizeHeadersLiteral,
   normalizeQueryLiteral
 };
-export const version = process.env.npm_package_version!;
+export const version = process.env.npm_package_version as string;

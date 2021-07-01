@@ -73,24 +73,25 @@ block script
         },
         postFetch(context) {
           var latestResponse = this.latestResponse;
-          if (latestResponse.id !== context.request.id) {
+          if (latestResponse.id !== context.id) {
             return;
           }
           latestResponse.id = null;
           this.loading = false;
+          var respondContext = context.respond;
           if (this.pendingCallbacks.length) {
             this.pendingCallbacks.forEach(function(callback) {
-              if (context.error) {
-                callback(context.error);
+              if (respondContext.error) {
+                callback(respondContext.error);
               } else {
-                callback(null, context.response);
+                callback(null, respondContext.response);
               }
             });
             this.pendingCallbacks = [];
           }
-          if (context.error === null) {
+          if (respondContext.error === null) {
             latestResponse.time = Date.now();
-            latestResponse.response = context.response;
+            latestResponse.response = respondContext.response;
           }
         }
       },

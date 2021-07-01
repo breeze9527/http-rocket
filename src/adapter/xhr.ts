@@ -31,7 +31,7 @@ export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
   }
 
   // open xhr
-  xhr.open(method, url);
+  xhr.open(method, url.toString());
 
   // headers
   for (const [key, value] of headers) {

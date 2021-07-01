@@ -22,7 +22,7 @@ export interface AdapterOptions {
   method: HTTPMethod;
   responseType: ResponseType;
   timeout: number;
-  url: string;
+  url: URL;
 }
 export interface Adapter {
   (

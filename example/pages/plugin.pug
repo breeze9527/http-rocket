@@ -57,7 +57,7 @@ block script
         },
         postFetch(context) {
           // report
-          var id = context.request.id;
+          var id = context.id;
           var startTime = this.startTime[id];
           if (startTime === undefined) {
             throw new Error('Oops, is something wrong!');
@@ -65,7 +65,7 @@ block script
           var req = context.request;
           el.view.req.innerText = [
             'Request#', id,
-            '(', context.request.method, ' ' , context.url, '): ',
+            '(', req.method, ' ' , req.url.toString(), '): ',
             Date.now() - startTime, 'ms'
           ].join('');
           delete this.startTime[id];
@@ -80,10 +80,12 @@ block script
     }
     RandQueryPlugin.prototype = Object.assign(
       {
-        request(context, pluginOption) {
+        request(context, pluginOption, callback) {
           var queryKey = pluginOption || this.defaultQueryKey;
           // mutate search query
-          context.query.set(queryKey, Math.random().toString().slice(2));
+          var req = context.request;
+          req.url.searchParams.set(queryKey, Math.random().toString().slice(2));
+          callback(null, req);
         }
       },
       Object.create(rocket.Plugin.prototype)
@@ -100,10 +102,12 @@ block script
     }
     CustomErrorPlugin.prototype = Object.assign(
       {
-        respond(context) {
+        respond(context, option, callback) {
           var res = context.response;
           if (context.error === null && res && res.body.errCode !== 0 ) {
-            context.error = new CustomError(res.body);
+            callback(new CustomError(res.body));
+          } else {
+            callback();
           }
         }
       },

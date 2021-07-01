@@ -7,7 +7,7 @@
   - [HTTPMethod](#httpmethod)
   - [HTTPProtocol](#httpprotocol)
   - [ResponseType](#responsetype)
-  - [PathSegmentType](#pathsegmenttype)
+  - [PathNodeType](#pathnodetype)
 - [Literal](#literal)
   - [HeadersLiteral](#headersliteral)
   - [ParamLiteral](#paramliteral)
@@ -15,7 +15,6 @@
 - [Class](#class)
   - [Rocket](#rocket)
   - [Source](#source)
-  - [Path](#path)
   - [RocketError](#rocketerror)
   - [NetworkError](#rocketerror)
   - [TimeoutError](#timeouterror)
@@ -24,7 +23,7 @@
   - [Misson](#misson)
   - [Plugin](#plugin)
 - [Interface](#interface)
-  - [PathSegment](#pathsegment)
+  - [PathNode](#pathnode)
   - [RocketOption](#rocketoption)
   - [Response](#response)
   - [Payload](#payload)
@@ -85,7 +84,7 @@ one of:
 
 ---
 
-#### PathSegmentType
+#### PathNodeType
 one of:
 - `'param'`
 - `'static'`
@@ -154,38 +153,105 @@ http://user:password@my.api.host:port/path/to/source/:sourceId
 5. port: 端口，可选。
 6. path：路径，可选，可附带参数，不包含前缀的`/`。
 
-#### Source.from(sourceLiteral: string): Source
-通过一个完整的url字符串创建Source对象，url至少应该包含protocol, host。
-
-e.g. `http://my.api.host/path/to/source/:sourceId`
-
 `Source`实例是一个不可变（immutable）的对象，对实例的更改操作都会返回一个新的`Source`实例。
 
-#### constructor(options: [SourceOption](#sourceoption))
+#### constructor(option: [SourceOption](#sourceoption) | string)
+`option`可以是符合[SourceOption](#sourceoption)结构的对象或是一个URL字符串。
+
+当`option`是URL字符串时必须是至少包含`protocol`与`host`的绝对地址。且协议只能为`https`或`http`。
+
+```js
+// Invalid:
+new Source('/path/to/source'); // 缺少protocol, host
+new Source('www.test.com'); // 缺少protocol
+new Source('ftp://my.fpt.server'); // 不支持的协议
+
+// Valid:
+new Source('http://my.api.host'); // 路径可以省略
+new Source('http://my.api.host/path/to/source/:sourceId'); // 包含路径，并且包含一个动态参数 sourceId
+```
 
 #### \<readonly\>protocol: [HTTPProtocol](#httpprotocol)
 
 #### setProtocol(protocol: [HTTPProtocol](#httpprotocol)): [Source](#source)
 
-#### \<readonly\>path: Path
+#### \<readonly\>path: string
+以`/`为分隔的路径字符串，以`:`为前缀的节点表示路径参数。
 
-#### setPath(path: Path | string): [Source](#source)
+#### setPath(path: [PathNode](#pathnode)\[\] | string): [Source](#source)
+设置路径，`path`可以是表示路径节点的对象组成的数组，或是路径的字面量表示。
+
+```js
+source.setPath('user/:userId'); // 不需要前缀的"/"
+// 相当于
+source.setPath([
+  { type: 'static', name: 'user' },
+  { type: 'param', name: 'userId' }
+]);
+```
+
+#### insertPath(path: [PathNode](#pathnode) | [PathNode](#pathnode)\[\] | string, index?: number): [Source](#source)
+在指定位置前插入路径节点。
+
+`path`可以是多个节点对象或是表示多个节点的路径字符串，`index`默认为`0`。
+
+```js
+const baseSource = new Source('http://my.api.server/a/b/c');
+const insertNodes = [
+  {type: 'static', name: 'y'},
+  {type: 'static', name: 'z'},
+]
+
+console.log(baseSource.path); // 'a/b/c'
+baseSource.insertPath(insertNodes).path; // 'y/z/a/b/c'
+baseSource.insertPath(insertNodes[0]).path; // 'y/a/b/c'
+baseSource.insertPath('y/z').path; // 'y/z/a/b/c'
+baseSource.insertPath('y/z', 1).path; // 'a/b/y/z/c'
+```
+
+#### appendPath(path: [PathNode](#pathnode) | [PathNode](#pathnode)\[\] | string): [Source](#source)
+在路径末尾添加节点。
+
+`path`参数参考`Source#insertPath`。
+
+#### removePath(filter: number | (item: [PathNode](#pathnode), index: number, nodes: [PathNode](#pathnode)\[\]) => boolean): [Source](#source)
+去除指定的路径节点。
+
+`filter`类型是数字时表示去除目标索引的节点。
+
+`filter`为函数时表示依次判断所有节点，并去除函数返回`false`的元素，函数接收的三个参数分别是当前节点，索引，节点数组。
+
+```js
+const baseSource = new Source('http://my.api.server/a/b/c/a');
+
+baseSource.removePath(1).path; // 'a/c/a'
+baseSource
+  .removePath(item => item.name === 'a')
+  .path; // 'b/c'
+```
 
 #### \<readonly\>userName: string
+用于验证的用户名，默认为字符串。
 
-#### setUserName(uesrname?: string): [Source](#source)
+#### setUserName(userName?: string): [Source](#source)
+修改用户名，参数可以为空，默认为空字符串。
 
 #### \<readonly\>password: string
 
 #### setPassword(password?: string): [Source](#source)
+修改密码，参数可以为空，默认为空字符串。
 
-#### \<readonly\>port?: number
+#### \<readonly\>port: number | null
+使用的端口，没有设置时默认为`null`
 
 #### setPort(port?: number): [Source](#source)
+设置端口。
 
 #### \<readonly\>hostName: string
+主机名。
 
 #### setHostName(hostName: string): [Source](#source)
+设置主机名。
 
 #### \<readonly\>origin: string
 `protocol` + `userName` + `password` + `hostName` + `port`的组合。
@@ -195,74 +261,17 @@ e.g. `http://my.api.host/path/to/source/:sourceId`
 
 #### toString(): string
 
-#### toURL(param?: [ParamLiteral](#paramliteral), query?: [URLSearchParams][URLSearchParams] | [QueryLiteral](#queryliteral)): string
-生成URL，当path包含参数时需要在param中传入对应的值。
+#### toURL(param?: [ParamLiteral](#paramliteral), query?: [URLSearchParams][URLSearchParams] | [QueryLiteral](#queryliteral)): [URL][URL]
+生成[URL][URL]实例，当path包含参数时需要在`param`中提供对应的值。
+
+```js
+const source = new Source('https://my.api.server/users/:userId');
+source.toURL({userId: 1}).toString(); // https://my.api.server/users/1
+source.toURL({userId: 2}, {q: 2}).toString(); // https://my.api.server/users/2?q=2
+```
 
 #### clone(): [Source](#source)
 返回与当前实例属性相同的副本
-
-```js
-const source = Source.from('http://test.com/:groupId/:userId');
-const param = {
-  groupId: 1,
-  userId: 2
-};
-const query = {
-  gender: 'male'
-};
-source.toURL(param, query); // http://test.com/1/2?gender=male
-```
-
----
-
-### Path 
-
-`Path`作为[Source](#source)的一部分，用来表示路径信息。
-
-`Path`实例是一个不可变（immutable）的对象，对实例的修改都会返回一个新的实例。
-
-#### constructor(segments: [PathSegment](#pathsegment)\[\])
-
-#### Path.from(path: string): [Path](#path)
-通过字符串创建`Path`对象，字符串不包含前缀的`/`，可以包含路径参数。
-```js
-Path.from('users/:userId');
-```
-
-#### \<readonly\>segments: [PathSegment](#pathsegment)\[\]
-
-#### insert(node: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string, index?: number): [Path](#path)
-在`segments`指定位置前插入节点，`index`默认为`0`。
-
-`node`可以是路径字符串，见`Path.from`。
-
-#### remove(index: number): [Path](#path)
-#### remove(filter: (item: [PathSegment](#pathsegment), index: number, segments: [PathSegment](#pathsegment)\[\]) => boolean): [Path](#path)
-删除`segments`指定位置的节点，传入参数类型为整数时表示删除指定`index`的节点，传入函数时表示删除所有函数返回结果为`false`的值。
-
-#### append(item: [PathSegment](#pathsegment) | [PathSegment](#pathsegment)\[\] | string): [Path](#path)
-在`segments`末尾添加节点。
-
-`node`可以是路径字符串，见`Path.from`。
-
-#### toString(): string
-输出path对象的字面量。
-
-#### clone(): [Path](#path)
-返回与当前实例属性相同的副本
-```js
-const path = new Path([
-  { type: 'static', name: 'users' },
-  { type: 'param', name: 'userId' }
-]);
-path.toString(); // users/:userId
-```
-#### normalize(param?: [ParamLiteral](#paramliteral)): string
-替换路径中的参数并返回路径字符串，返回的字符串不包含前缀的`/`。
-```js
-const path = Path.from('users/:userId');
-path.normalize({userId: 1}); // users/1
-```
 
 ---
 
@@ -317,17 +326,11 @@ Mission类继承于[events.EventEmitter][EventEmitter]。
 promise在misson触发`error`或`success`事件时转换状态，并返回相应的数据。
 请求成功时返回[Respose](#response)类型，请求失败时返回[RocketError](#rocketerror)。
 
-#### \<readonly\>method: [HTTPMethod](#httpmethod)
-当前请求使用的HTTPMethod。
-
 #### \<readonly\>id: string
 请求的唯一标识。
 
-#### \<readonly\>url: string
-请求的目标URL。
-
 #### \<readonly\>source: [Source](#source)
-请求使用的Source对象。
+请求使用的`Source`对象。
 
 #### abort(): void
 取消当前请求，请求被取消后会触发`error`事件，事件参数为[AbortError](#aborterror)的实例。
@@ -341,30 +344,30 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 #### \<readonly\>name: string
 插件的名称，即构造函数传入的参数。
 
-#### preRequest?(context: [RequestContext](#requestcontext), option: any)
+#### preRequest?(context: [RocketContext](#rocketcontext), option: any): void
 
-#### request?(context: [RequestContext](#requestcontext), option: any)
+#### request?(context: [RocketContext](#rocketcontext), option: any, callback: (error?: [RocketError](#rocketerror) | null, context?: [RequestContext](#requestcontext)) => void): (() => void | undefined)
 
-#### preFetch?(context: [RequestContext](#requestcontext), option: any)
+#### preFetch?(context: [RocketContext](#rocketcontext), option: any): void
 
-#### fetch?(context: [RequestContext](#requestcontext), option: any, callback: (error?: [RocketError](#rocketerror) | null, response?: [Response](#response)) => void)
+#### fetch?(context: [RocketContext](#rocketcontext), option: any, callback: (error?: [RocketError](#rocketerror) | null, response?: [Response](#response)) => void): (() => void | undefined)
 
-#### postFetch?(context: [RespondContext](#respondcontext), option: any)
+#### postFetch?(context: [RocketContext](#rocketcontext), option: any): void
 
-#### respond?(context: [RespondContext](#respondcontext), option: any)
+#### respond?(context: [RocketContext](#rocketcontext), option: any, callback: (error?: [RocketError](#rocketerror) | null, response?: [Response](#response)) => void): (() => void | undefined)
 
-#### postRespond?(context: [RespondContext](#respondcontext), option: any)
+#### postRespond?(context: [RocketContext](#rocketcontext), option: any): void
 
 ---
 
 ## Interface
 
-### PathSegment
+### PathNode
 
 #### name: string
-静态路径节点字符串或路径参数的名称(不包含前缀的`:`)。
+静态路径节点字符串或路径参数的名称（不包含前缀的`:`）。
 
-#### type: [PathSegmentType](#pathsegmenttype)
+#### type: [PathNodeType](#pathnodetype)
 节点类型。
 
 ---
@@ -416,7 +419,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 ### Payload
 
 #### param?: [ParamLiteral](#paramliteral)
-路由路径参数中对应的参数值，`paramName`为`source`中设置的参数名称(`PathSegment#type`)
+路由路径参数中对应的参数值，`paramName`为`source`中设置的参数名称(`PathNode#type`)
 
 #### query?: [URLSearchParams][URLSearchParams] | [QueryLiteral](#queryliteral)
 查询参数对象，用于生成url中的查询字符串。
@@ -464,7 +467,7 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 #### timeout: number
 
-#### url: string
+#### url: [URL][URL]
 
 ---
 
@@ -487,26 +490,42 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 ---
 
+### RocketContext
+
+#### \<readonly\>id: string
+请求的唯一标识。
+
+#### \<readonly\>source: [Source](#source)
+请求所用的`Source`实例。
+
+#### \<readonly\>request: [RequestContext](#requestcontext)
+请求上下文对象。
+
+#### \<readonly\>respond: [RespondContext](#respondcontext)
+响应上下文对象。
+
+---
+
 ### RequestContext
 请求上下文，在插件中使用，用于记录或操作请求参数。
 
 #### body: [BodyType](#bodytype)
+请求的消息体。
 
 #### headers: [Headers][Headers]
-
-#### id: string
+请求头部信息。
 
 #### method: [HTTPMethod](#httpmethod)
-
-#### param: [ParamLiteral](#paramliteral)
-
-#### query: [URLSearchParams][URLSearchParams]
+请求使用的方法。
 
 #### responseType: [ResponseType](#responsetype)
-
-#### source: [Source](#source)
+请求响应的数据类型。
 
 #### timeout: number
+请求的超时限制，单位是毫秒，`0`表示没有限制。
+
+#### url: [URL][URL]
+使用`Payload#query`，`Payload#param`，`RocketOption#source`生成的`URL`实例。
 
 ---
 
@@ -515,12 +534,6 @@ promise在misson触发`error`或`success`事件时转换状态，并返回相应
 
 #### error: [RocketError](#rocketerror) | null
 响应的错误对象
-
-#### url: string
-请求的完整url
-
-#### request: [RequestContext](#requestcontext)
-请求上下文
 
 #### response: [Response](#response) | null
 响应数据
@@ -629,3 +642,4 @@ searchParams.toString(); // a=1&b=2&b=3
 [URLSearchParamsToString]: https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams/toString
 [XHRSendParam]: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/send#parameters
 [ProgressEvent]: https://developer.mozilla.org/en-US/docs/Web/API/ProgressEvent
+[URL]: https://developer.mozilla.org/en-US/docs/Web/API/URL
