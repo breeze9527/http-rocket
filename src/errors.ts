@@ -1,20 +1,22 @@
+/* eslint-disable max-classes-per-file */
+
 export class RocketError {
-  readonly name: string = 'RocketError';
   readonly message: string;
-  constructor(message = '' ) {
+  readonly name: string = 'RocketError';
+
+  constructor(message = '') {
     this.message = message;
   }
+
   toString() {
     const {
       message,
       name
     } = this;
     const nameStr = `[${name}]`;
-    if (message) {
-      return nameStr + ' ' + this.message;
-    } else {
-      return nameStr;
-    }
+    return message
+      ? nameStr + ' ' + this.message
+      : nameStr;
   }
 }
 
@@ -27,15 +29,17 @@ export class TimeoutError extends RocketError {
 }
 
 export class AbortError extends RocketError {
+  name = 'AbortError';
+
   constructor(message = 'Canceled by user') {
     super(message);
   }
-  name = 'AbortError';
 }
 
 export class ParseError extends RocketError {
-  name = 'ParseError';
   error: Error;
+  name = 'ParseError';
+
   constructor(error: Error) {
     super(error.message);
     this.error = error;

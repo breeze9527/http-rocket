@@ -2,30 +2,29 @@ import { EventEmitter } from 'events';
 import type {
   EditableRocketContext,
   RequestContext
-} from "../plugin";
+} from '../plugin';
 import type {
   Adapter,
   Response
 } from '../adapter';
 import {
+  PluginItem,
   processAsyncHook,
-  processSyncHook,
-  PluginItem
+  processSyncHook
 } from './plugin-process';
 import type { RocketError } from '../errors';
 import Source from '../source';
 
-function freezeCopy<D extends Record<string, any>>(
-  context: D
-): Readonly<D> {
-  return Object.freeze(Object.assign({}, context));
+function freezeCopy<D extends Record<string, any>>(context: D): Readonly<D> {
+  return Object.freeze({ ...context });
 }
 
 class Mission<R, P extends string = string> extends EventEmitter {
   #canceller?: () => void;
-  readonly promise: Promise<Response<R>>;
   readonly id: string;
+  readonly promise: Promise<Response<R>>;
   readonly source: Source<P>;
+
   constructor(
     plugins: PluginItem<any>[],
     context: EditableRocketContext<R, P>,
@@ -42,8 +41,8 @@ class Mission<R, P extends string = string> extends EventEmitter {
 
     const cancellerRef = (canceller?: () => void) => {
       this.#canceller = canceller;
-    }
-    const updateRespondContext = function(error: RocketError | null, data?: Response<R> | null) {
+    };
+    const updateRespondContext = (error: RocketError | null, data?: Response<R> | null) => {
       if (error) {
         context.respond = freezeCopy({
           error,
@@ -55,7 +54,7 @@ class Mission<R, P extends string = string> extends EventEmitter {
           response: data
         });
       }
-    }
+    };
 
     const processRespondStage = () => {
       const processPostRespond = () => {
@@ -73,7 +72,7 @@ class Mission<R, P extends string = string> extends EventEmitter {
         } else {
           this.emit('success', respond.response);
         }
-      }
+      };
 
       // respond
       processAsyncHook<Response<R> | null>(
@@ -86,9 +85,9 @@ class Mission<R, P extends string = string> extends EventEmitter {
           return true;
         },
         processPostRespond
-      )
-    }
-    
+      );
+    };
+
     const processFetchStage = () => {
       // pre-fetch
       processSyncHook(
@@ -117,7 +116,7 @@ class Mission<R, P extends string = string> extends EventEmitter {
             );
             processRespondStage();
           };
-          // If no plugin response, invoke adapter. 
+          // If no plugin response, invoke adapter.
           if (
             context.respond.error === null &&
             context.respond.response === null
@@ -146,13 +145,13 @@ class Mission<R, P extends string = string> extends EventEmitter {
                 uploadSuccesse: this.emit.bind(this, 'uploadSuccesse')
               }
             );
-            cancellerRef(adapterCanceller)
+            cancellerRef(adapterCanceller);
           } else {
             processPostFetch();
           }
         }
-      )
-    }
+      );
+    };
 
     // pre-request
     processSyncHook(
@@ -160,7 +159,7 @@ class Mission<R, P extends string = string> extends EventEmitter {
       freezeCopy(context),
       plugin => plugin.preRequest
     );
-  
+
     // request
     processAsyncHook<RequestContext>(
       plugins,

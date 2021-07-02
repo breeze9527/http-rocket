@@ -23,13 +23,13 @@ export interface RespondContext<R = any> {
 
 export interface RocketContext<R = any, P extends string = string> {
   readonly id: string;
-  readonly source: Source<P>;
   readonly request: Readonly<RequestContext>;
   readonly respond: Readonly<RespondContext<R>>;
+  readonly source: Source<P>;
 }
 export type EditableRocketContext<D = any, P extends string = string> = {
   -readonly [K in keyof RocketContext<D, P>]: RocketContext<D, P>[K];
-}
+};
 
 export interface PluginsOption {
   /** plugins option */
@@ -44,14 +44,17 @@ export type AsyncHook<O, D> = (
   context: RocketContext<any, string>,
   option: O,
   callback: AsyncHookCallback<D>
-) => (() => void) | undefined
+) => (() => void) | undefined;
 export type SyncHook<O> = (context: RocketContext<any, string>, option: O) => void;
 
 export abstract class Plugin<O = any> {
   readonly name: string;
+
   constructor(name: string) {
     this.name = name;
   }
+
+  /* eslint-disable @typescript-eslint/member-ordering */
   abstract preRequest?: SyncHook<O>;
   abstract request?: AsyncHook<O, RequestContext>;
   abstract preFetch?: SyncHook<O>;
@@ -59,4 +62,5 @@ export abstract class Plugin<O = any> {
   abstract postFetch?: SyncHook<O>;
   abstract respond?: AsyncHook<O, Response<any>>;
   abstract postRespond?: SyncHook<O>;
+  /* eslint-enable @typescript-eslint/member-ordering */
 }

@@ -1,6 +1,7 @@
 const gulp = require('gulp');
 const del = require('del');
 const path = require('path');
+
 const cwd = process.cwd();
 const {
   buildDeclaration,
@@ -8,9 +9,7 @@ const {
   buildUMD,
   buildESM
 } = require('./task/build');
-const {
-  bundle
-} = require('./task/bundle');
+const { bundle } = require('./task/bundle');
 
 function cleanDist() {
   return del(path.join(cwd, './dist'));
@@ -24,7 +23,7 @@ exports.build = gulp.series(
     buildDeclaration,
     buildCJS,
     buildESM,
-    buildUMD,
+    buildUMD
   )
 );
 exports.bundle = bundle;

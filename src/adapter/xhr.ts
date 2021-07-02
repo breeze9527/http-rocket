@@ -7,7 +7,7 @@ import {
 } from '../errors';
 import { parseResponseHeaders } from '../util';
 
-export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
+const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
   const xhr = new XMLHttpRequest();
   const {
     body = null,
@@ -25,7 +25,7 @@ export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
     uploadSuccesse: uploadSuccessCallback
   } = callbacks;
   xhr.responseType = responseType === 'json' ? 'text' : responseType;
-  // set timeout 
+  // set timeout
   if (timeout !== undefined) {
     xhr.timeout = timeout;
   }
@@ -34,9 +34,9 @@ export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
   xhr.open(method, url.toString());
 
   // headers
-  for (const [key, value] of headers) {
+  Array.from(headers).forEach(([key, value]) => {
     xhr.setRequestHeader(key, value);
-  }
+  });
 
   // handle response success
   xhr.onload = function handleXhrLoad() {
@@ -64,23 +64,23 @@ export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
         status: responseStatus
       });
     }
-  }
+  };
 
   // timeout error
   xhr.ontimeout = function timeoutHandler() {
     errorCallabck(new TimeoutError());
-  }
+  };
   // abort
-  xhr.onabort = function() {
+  xhr.onabort = function abortCallback() {
     errorCallabck(new AbortError());
-  }
+  };
   // network error
   xhr.onerror = function errorHandler() {
     errorCallabck(new NetworkError());
-  }
+  };
   xhr.onprogress = function progressHandler(e) {
     progressCallback(e);
-  }
+  };
 
   // upload
   const upload = xhr.upload;
@@ -88,11 +88,11 @@ export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
     // upload progress
     upload.onprogress = function uploadProgressHandler(e) {
       return uploadProgressCallback(e);
-    }
+    };
     // upload success
     upload.onload = function uploadSuccessHandle() {
       return uploadSuccessCallback();
-    }
+    };
   }
 
   // send it
@@ -102,5 +102,7 @@ export const xhrAdapter: Adapter = function xhrAdapter(options, callbacks) {
     if (xhr.readyState !== XMLHttpRequest.DONE) {
       xhr.abort();
     }
-  }
-}
+  };
+};
+
+export default xhrAdapter;

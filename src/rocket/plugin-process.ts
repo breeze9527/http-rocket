@@ -1,7 +1,3 @@
-import type {
-  Adapter,
-  Response
-} from '../adapter';
 import {
   AbortError,
   RocketError
@@ -11,11 +7,12 @@ import type {
   Plugin,
   RocketContext,
   SyncHook
-} from "../plugin";
+} from '../plugin';
+import { forEachIterable } from '../util';
 
 export interface PluginItem<O = any> {
-  plugin: Plugin<O>;
   option: O;
+  plugin: Plugin<O>;
 }
 
 export function processAsyncHook<D>(
@@ -56,7 +53,7 @@ export function processAsyncHook<D>(
       if (hookCanceller === undefined) {
         hookCanceller = function defaultPluginCanceller() {
           reject(new AbortError());
-        }
+        };
       }
       cancellerRef(hookCanceller);
     }).then(
@@ -80,20 +77,21 @@ export function processAsyncHook<D>(
           throw err;
         }
       }
-    )
-  }
+    );
+    return undefined;
+  };
   runPlugin(0);
 }
 
 export function processSyncHook(
   plugins: PluginItem<any>[],
   context: RocketContext,
-  getHook: (plugin: Plugin<any>) => SyncHook<any> | undefined,
+  getHook: (plugin: Plugin<any>) => SyncHook<any> | undefined
 ) {
-  for (const { plugin, option } of plugins) {
+  forEachIterable(plugins, ({ plugin, option }) => {
     const hook = getHook(plugin);
     if (typeof hook === 'function') {
       hook.call(plugin, context, option);
     }
-  }
+  });
 }

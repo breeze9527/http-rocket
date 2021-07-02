@@ -1,31 +1,32 @@
 import Source from '../source';
 import {
   Adapter,
-  ResponseType,
-  HTTPMethod,
   BodyType,
-  xhrAdapter
+  HTTPMethod,
+  ResponseType
 } from '../adapter';
+import xhrAdapter from '../adapter/xhr';
 import {
   HeadersLiteral,
   QueryLiteral,
-  normalizeHeadersLiteral,
-  mergeHeaders
+  mergeHeaders,
+  normalizeHeadersLiteral
 } from '../util';
 import Mission from './mission';
 import {
+  EditableRocketContext,
   Plugin,
-  PluginsOption,
-  EditableRocketContext
+  PluginsOption
 } from '../plugin';
 
 export interface Payload<P extends string> {
-  param?: Record<P, string | number>;
-  query?: URLSearchParams | QueryLiteral;
   body?: BodyType;
   headers?: Headers | HeadersLiteral | ((header: Headers) => Headers);
+  param?: Record<P, string | number>;
   pluginOption?: PluginsOption;
+  query?: URLSearchParams | QueryLiteral;
 }
+
 interface RocketOption<D, P extends string> {
   adapter?: Adapter; // XHR, JSONP, http-client(node.js)
   headers?: Headers | HeadersLiteral;
@@ -33,20 +34,22 @@ interface RocketOption<D, P extends string> {
   payload?(data: D): Payload<P>;
   plugins?: Plugin<any>[];
   responseType?: ResponseType;
-  timeout?: number;
   source: string | Source<P>;
+  timeout?: number;
 }
 
 let nextId = 0;
+
 class Rocket<D = any, R = any, P extends string = string> {
-  #method: HTTPMethod;
-  #responseType: ResponseType;
-  #timeout: number;
   #adapter: Adapter;
   #headers: Headers;
+  #method: HTTPMethod;
   #normalizePayload?: (data: D) => Payload<P>;
   #plugins: Plugin<any>[];
+  #responseType: ResponseType;
   #source: Source<P>;
+  #timeout: number;
+
   constructor(options: RocketOption<D, P>);
   constructor(method: HTTPMethod, source: string | Source<P>);
   constructor(_optionsOrMethod: RocketOption<D, P> | HTTPMethod, _src?: string | Source<P>) {
@@ -81,16 +84,10 @@ class Rocket<D = any, R = any, P extends string = string> {
       this.#source = typeof source === 'string' ? new Source<P>(source) : source;
     }
   }
-  private normalizePayload(data: D): Payload<P> {
-    const source = this.#source;
-    const normalizer = this.#normalizePayload;
-    if (data !== undefined && normalizer === undefined) {
-      throw new Error(`Payload normalizer not found: ${source}`);
-    }
-    return normalizer?.(data) ?? {}
-  }
+
   private createContext(payload: Payload<P>): EditableRocketContext<R, P> {
-    const id = nextId ++;
+    nextId += 1;
+    const id = nextId;
     const {
       body = null,
       headers: payloadHeaders = {}
@@ -101,7 +98,6 @@ class Rocket<D = any, R = any, P extends string = string> {
     const source = this.#source;
     return {
       id: id.toString(),
-      source,
       request: Object.freeze({
         body,
         headers,
@@ -113,8 +109,18 @@ class Rocket<D = any, R = any, P extends string = string> {
       respond: Object.freeze({
         error: null,
         response: null
-      })
+      }),
+      source
     };
+  }
+
+  private normalizePayload(data: D): Payload<P> {
+    const source = this.#source;
+    const normalizer = this.#normalizePayload;
+    if (data !== undefined && normalizer === undefined) {
+      throw new Error(`Payload normalizer not found: ${source}`);
+    }
+    return normalizer ? normalizer(data) : {};
   }
 
   send(data: D) {
@@ -124,8 +130,8 @@ class Rocket<D = any, R = any, P extends string = string> {
     plugins.reverse();
     return new Mission<R, P>(
       plugins.map(plugin => ({
-        plugin,
-        option: payload.pluginOption?.[plugin.name]
+        option: payload.pluginOption?.[plugin.name],
+        plugin
       })),
       requestContext,
       this.#adapter

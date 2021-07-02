@@ -10,34 +10,36 @@ const typescript = require('@rollup/plugin-typescript');
 const rollupReplace = require('@rollup/plugin-replace');
 const nodePolyfill = require('rollup-plugin-node-polyfills');
 
+const DEST_DIR_NAME = 'dist';
+
+const packageName = process.env.npm_package_name;
+
 /**
  * @param {string} format cjs | esm | umd
- * @param {bollean} minify 
+ * @param {boolean} minify
  */
-function generateOutputConfig (format, minify) {
-  const packageName = process.env.npm_package_name;
-  const createOutputConfig = function(format, minify) {
-    return {
-      exports: 'named',
-      file: packageName + (minify ? '.min' : '') + '.js',
-      format,
-      plugins: minify ? [terser()] : [],
-      name: 'rocket'
-    };
+function createOutputConfig(format, minify) {
+  return {
+    exports: 'named',
+    file: packageName + (minify ? '.min' : '') + '.js',
+    format,
+    name: 'rocket',
+    plugins: minify ? [terser()] : []
   };
-  const output = [createOutputConfig(format, false)];
-  if (minify) {
-    output.push(createOutputConfig(format, true));
-  }
-  return output;
 }
 
 /**
  * @param {string} format cjs | esm | umd
  */
-function generateInputConfig (format) {
+function generateInputConfig(format) {
   const extensions = ['.ts', '.js'];
   return {
+    external: format !== 'umd'
+      ? [
+        /@babel\/runtime/,
+        'events'
+      ]
+      : undefined,
     plugins: [
       rollupReplace({
         preventAssignment: true,
@@ -54,33 +56,29 @@ function generateInputConfig (format) {
         babelHelpers: 'runtime',
         extensions
       })
-    ],
-    external: format !== 'umd'
-      ? [
-        /@babel\/runtime/,
-        'events'
-      ]
-      : undefined
-  }
-};
+    ]
+  };
+}
 
-function createBuildTask(format, minify) {
+function createBuildTask(format) {
   return function buildTask() {
     return gulp.src('src/index.ts')
       .pipe(sourcemaps.init())
       .pipe(rollup(
         generateInputConfig(format),
-        generateOutputConfig(format, minify)
+        [
+          createOutputConfig(format, true),
+          createOutputConfig(format, false)
+        ]
       ))
       .pipe(sourcemaps.write(''))
-      .pipe(gulp.dest(path.join(DEST_DIR_NAME, format)))
-  }
+      .pipe(gulp.dest(path.join(DEST_DIR_NAME, format)));
+  };
 }
 
 const tsProject = ts.createProject('tsconfig.json', {
   declaration: true
 });
-const DEST_DIR_NAME = 'dist';
 
 function buildDeclaration() {
   const tsResult = tsProject.src()
@@ -89,6 +87,6 @@ function buildDeclaration() {
 }
 
 exports.buildDeclaration = buildDeclaration;
-exports.buildESM = createBuildTask('esm', true);
-exports.buildCJS = createBuildTask('cjs', true);
-exports.buildUMD = createBuildTask('umd', true);
+exports.buildESM = createBuildTask('esm');
+exports.buildCJS = createBuildTask('cjs');
+exports.buildUMD = createBuildTask('umd');

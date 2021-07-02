@@ -1,0 +1,84 @@
+{
+  "extends": [
+    "airbnb-typescript/base"
+  ],
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "@typescript-eslint/comma-dangle": "off",
+    "@typescript-eslint/lines-between-class-members": ["error", "always", {
+      "exceptAfterSingleLine": true
+    }],
+    "@typescript-eslint/member-ordering": ["warn", {
+      "default": {
+        "memberTypes": [
+          "signature",
+          "field",
+          "private-static-method", "protected-static-method", "public-static-method",
+          "private-abstract-method", "protected-abstract-method", "public-abstract-method",
+          "private-instance-method", "protected-instance-method", "public-instance-method"
+        ],
+        "order": "alphabetically"
+      }
+    }],
+    "@typescript-eslint/no-unused-vars": "warn",
+    "arrow-parens": ["warn", "as-needed"],
+    "comma-dangle": ["error", "never"],
+    "import/no-extraneous-dependencies": ["error", {
+      "devDependencies": [
+        "example/server/*.js",
+        "task/*.js",
+        "gulpfile.js"
+      ]
+    }],
+    "linebreak-style": "off",
+    "no-nested-ternary": "off",
+    "operator-linebreak": ["error", "after", {
+      "overrides": {
+        "?": "before",
+        ":": "before"
+      }
+    }],
+    "padding-line-between-statements": [
+      "error",
+      {
+        "blankLine": "always",
+        "prev": "*",
+        "next": [
+          "export",
+          "function",
+          "class"
+        ]
+      },
+      {
+        "blankLine": "any",
+        "prev": ["export"],
+        "next": [
+          "export",
+          "function",
+          "class"
+        ]
+      }
+    ],
+    "prefer-destructuring": "off",
+    "prefer-template": "off",
+    "sort-imports": ["warn", {
+      "ignoreDeclarationSort": true,
+      "allowSeparatedGroups": true
+    }],
+    "sort-keys": ["warn", "asc"]
+  },
+  "overrides": [
+    {
+      "files": [
+        "example/server/*.js",
+        "task/*.js"
+      ],
+      "rules": {
+        "no-restricted-syntax": "off",
+        "no-console": "off"
+      }
+    }
+  ]
+}

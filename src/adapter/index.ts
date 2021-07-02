@@ -9,13 +9,15 @@ export interface Response<T> {
   headers: Headers;
   status: number;
 }
+
 export interface AdapterCallbacks<T = unknown> {
+  error(error: RocketError): void;
   progress(event: ProgressEvent): void;
   success(data: Response<T | null>): void;
-  error(error: RocketError): void;
   uploadProgress(event: ProgressEvent): void;
   uploadSuccesse(): void;
 }
+
 export interface AdapterOptions {
   body: Document | BodyInit | null;
   headers: Headers;
@@ -24,11 +26,10 @@ export interface AdapterOptions {
   timeout: number;
   url: URL;
 }
+
 export interface Adapter {
   (
     options: AdapterOptions,
     callbacks: AdapterCallbacks
   ): () => void;
 }
-
-export { xhrAdapter } from './xhr';

@@ -1,5 +1,6 @@
 import {
   QueryLiteral,
+  forEachIterable,
   normalizeQueryLiteral
 } from './util';
 
@@ -24,8 +25,8 @@ const PATH_SEPARATOR = '/';
 const PARAMETER_PREFIX = ':';
 const REG_VALID_PARAM_NAME = /^[a-z]+$/i;
 const REG_EMPTY = /^\s*$/;
-const REG_MATCH_HREF = /^(https?):\/\/(?:([^:@\/]+)(?::([^:@\/]+))?@)?([^\/:]+)(?::(\d+))?(?:\/([^?]+)*)?$/;
-//                       protocol     username     password           host     port       path
+const REG_MATCH_HREF = /^(https?):\/\/(?:([^:@/]+)(?::([^:@/]+))?@)?([^/:]+)(?::(\d+))?(?:\/([^?]+)*)?$/;
+//                       protocol     username    password          host    port       path
 
 class Source<P extends string = string> {
   #component: {
@@ -39,21 +40,20 @@ class Source<P extends string = string> {
 
   static parsePath<P extends string = string>(path: string) {
     const nodes: PahtNode<P>[] = [];
-    for (const str of path.split(PATH_SEPARATOR)) {
-      if (REG_EMPTY.test(str)) {
-        continue;
+    forEachIterable(path.split(PATH_SEPARATOR), str => {
+      if (!REG_EMPTY.test(str)) {
+        const node: PahtNode<P> = str[0] === PARAMETER_PREFIX
+          ? {
+            name: str.slice(1) as P,
+            type: 'param'
+          }
+          : {
+            name: str,
+            type: 'static'
+          };
+        nodes.push(node);
       }
-      const node: PahtNode<P> = str[0] === PARAMETER_PREFIX
-        ? {
-          name: str.slice(1) as P,
-          type: 'param'
-        }
-        : {
-          name: str,
-          type: 'static'
-        }
-      nodes.push(node);
-    }
+    });
     return nodes;
   }
 
@@ -64,17 +64,16 @@ class Source<P extends string = string> {
         throw new Error(`Illegal source: ${option}`);
       } else {
         const [
-          _match,
           protocol,
           userName = '',
           password = '',
           hostName,
           port,
           path
-        ] = regMatchResult;
+        ] = regMatchResult.slice(1);
         this.#component = {
-          hostName: hostName,
-          password: password,
+          hostName,
+          password,
           pathNodes: path ? Source.parsePath<P>(path) : [],
           port: port ? parseInt(port, 10) : null,
           protocol: protocol as Protocol,
@@ -97,15 +96,27 @@ class Source<P extends string = string> {
     }
   }
 
+  private extend<NP extends string = P>(option: Partial<SourceOption<NP>>) {
+    return new Source<NP>({
+      hostName: this.#component.hostName,
+      password: this.#component.password || undefined,
+      path: this.#component.pathNodes.map(item => ({ ...item })) as PahtNode<NP>[],
+      port: this.#component.port || undefined,
+      protocol: this.#component.protocol || undefined,
+      userName: this.#component.userName || undefined,
+      ...option
+    });
+  }
+
   private validatePathNode(node: PahtNode | PahtNode[]) {
     const list = Array.isArray(node) ? node : [node];
     const existed: Record<string, boolean> = {};
-    for (const item of this.#component.pathNodes) {
+    forEachIterable(this.#component.pathNodes, item => {
       if (item.type === 'param') {
         existed[item.name] = true;
       }
-    }
-    for (const item of list) {
+    });
+    forEachIterable(list, item => {
       const name = item.name;
       if (existed[name] === true) {
         throw new Error(`Duplicate name: ${name}`);
@@ -114,31 +125,20 @@ class Source<P extends string = string> {
       } else {
         existed[name] = true;
       }
-    }
-  }
-
-  private extend<NP extends string = P>(option: Partial<SourceOption<NP>>) {
-    return new Source<NP>({
-      hostName: this.#component.hostName,
-      password: this.#component.password || undefined,
-      port: this.#component.port || undefined,
-      protocol: this.#component.protocol || undefined,
-      userName: this.#component.userName || undefined,
-      path: this.#component.pathNodes.map(item => Object.assign({}, item)) as PahtNode<NP>[],
-      ...option,
     });
   }
 
-  get protocol() {
-    return this.#component.protocol;
+  get hostName() {
+    return this.#component.hostName;
   }
 
-  setProtocol(protocol: Protocol) {
-    return this.extend<P>({ protocol });
+  get password() {
+    return this.#component.password;
   }
+
   get path() {
     const result: string[] = [];
-    for (let { name, type } of this.#component.pathNodes) {
+    forEachIterable(this.#component.pathNodes, ({ name, type }) => {
       if (name !== '') {
         if (type === 'static') {
           result.push(name);
@@ -146,78 +146,22 @@ class Source<P extends string = string> {
           result.push(PARAMETER_PREFIX + name);
         }
       }
-    }
+    });
     return result.join(PATH_SEPARATOR);
   }
-  setPath<NP extends string = string>(path: PahtNode<NP>[] | string = '') {
-    return this.extend<NP>({ path });
+
+  get port() {
+    return this.#component.port;
   }
-  insertPath<EP extends string = string>(
-    path: PahtNode<EP> | PahtNode<EP>[] | string,
-    index: number = 0
-  ): Source<P | EP> {
-    const nodes = typeof path === 'string'
-      ? Source.parsePath<EP>(path)
-      : Array.isArray(path)
-        ? path
-        : [path];
-    if (nodes.length === 0) {
-      return this.clone() as Source<P | EP>;
-    }
-    this.validatePathNode(nodes);
-    const rawNodes = this.#component.pathNodes.slice();
-    const insertIndex = Math.max(Math.min(index, nodes.length), 0);
-    const newNodes = ([] as PahtNode<P | EP>[])
-      .concat(rawNodes.slice(0, insertIndex))
-      .concat(nodes)
-      .concat(rawNodes.slice(insertIndex))
-      .map(item => Object.assign({}, item));
-    return this.extend<P | EP>({ path: newNodes });
-  }
-  appendPath<EP extends string = string>(node: PahtNode<EP> | PahtNode<EP>[] | string): Source<P | EP> {
-    const length = this.#component.pathNodes.length;
-    return this.insertPath(node, length);
-  }
-  removePath<EP extends string = never>(
-    filter: number | ((item: PahtNode<P>, index: number, nodes: PahtNode<P>[]) => boolean)
-  ): Source<Exclude<P, EP>> {
-    let nodes = this.#component.pathNodes.slice();
-    if (typeof filter === 'number') {
-      nodes.splice(filter, 1);
-    } else {
-      nodes = nodes.filter(filter);
-    }
-    return this.extend<Exclude<P, EP>>({
-      path: nodes as PahtNode<Exclude<P, EP>>[]
-    });
+
+  get protocol() {
+    return this.#component.protocol;
   }
 
   get userName() {
     return this.#component.userName;
   }
-  setUserName(userName: string = '') {
-    return this.extend<P>({ userName });
-  }
-  get password() {
-    return this.#component.password;
-  }
-  setPassword(password: string = '') {
-    return this.extend<P>({ password });
-  }
-  get port() {
-    return this.#component.port;
-  }
-  setPort(port?: number) {
-    return this.extend<P>({ port });
-  }
-  get hostName() {
-    return this.#component.hostName;
-  }
-  setHostName(hostName: string) {
-    return this.extend<P>({ hostName });
-  }
 
-  // computed accessors
   get origin() {
     const {
       hostName,
@@ -240,30 +184,102 @@ class Source<P extends string = string> {
     }
     return result;
   }
+
+  appendPath<EP extends string = string>(
+    node: PahtNode<EP> | PahtNode<EP>[] | string
+  ): Source<P | EP> {
+    const length = this.#component.pathNodes.length;
+    return this.insertPath(node, length);
+  }
+
+  clone() {
+    return this.extend<P>({});
+  }
+
+  insertPath<EP extends string = string>(
+    path: PahtNode<EP> | PahtNode<EP>[] | string,
+    index: number = 0
+  ): Source<P | EP> {
+    const nodes = typeof path === 'string'
+      ? Source.parsePath<EP>(path)
+      : Array.isArray(path)
+        ? path
+        : [path];
+    if (nodes.length === 0) {
+      return this.clone() as Source<P | EP>;
+    }
+    this.validatePathNode(nodes);
+    const rawNodes = this.#component.pathNodes.slice();
+    const insertIndex = Math.max(Math.min(index, nodes.length), 0);
+    const newNodes = ([] as PahtNode<P | EP>[])
+      .concat(rawNodes.slice(0, insertIndex))
+      .concat(nodes)
+      .concat(rawNodes.slice(insertIndex))
+      .map(item => ({ ...item }));
+    return this.extend<P | EP>({ path: newNodes });
+  }
+
+  removePath<EP extends string = never>(
+    filter: number | ((item: PahtNode<P>, index: number, nodes: PahtNode<P>[]) => boolean)
+  ): Source<Exclude<P, EP>> {
+    let nodes = this.#component.pathNodes.slice();
+    if (typeof filter === 'number') {
+      nodes.splice(filter, 1);
+    } else {
+      nodes = nodes.filter(filter);
+    }
+    return this.extend<Exclude<P, EP>>({
+      path: nodes as PahtNode<Exclude<P, EP>>[]
+    });
+  }
+
+  setHostName(hostName: string) {
+    return this.extend<P>({ hostName });
+  }
+
   setOrigin(origin: string) {
     const regMatchResult = REG_MATCH_HREF.exec(origin);
     if (regMatchResult === null) {
       throw new Error(`Illegal origin: ${origin}`);
     } else {
       const [
-        _matched,
         protocol,
         userName = '',
         password = '',
-        hostname,
+        hostName,
         port
-      ] = regMatchResult;
+      ] = regMatchResult.slice(1);
       const options: Partial<SourceOption<P>> = {
+        hostName,
+        password,
         protocol: protocol as Protocol,
-        userName: userName,
-        password: password,
-        hostName: hostname
+        userName
       };
       if (port) {
         options.port = parseInt(port, 10);
       }
       return this.extend<P>(options);
     }
+  }
+
+  setPassword(password: string = '') {
+    return this.extend<P>({ password });
+  }
+
+  setPath<NP extends string = string>(path: PahtNode<NP>[] | string = '') {
+    return this.extend<NP>({ path });
+  }
+
+  setPort(port?: number) {
+    return this.extend<P>({ port });
+  }
+
+  setProtocol(protocol: Protocol) {
+    return this.extend<P>({ protocol });
+  }
+
+  setUserName(userName: string = '') {
+    return this.extend<P>({ userName });
   }
 
   toString() {
@@ -278,12 +294,15 @@ class Source<P extends string = string> {
     return result;
   }
 
-  toURL(param?: Record<P, string | number>, query: URLSearchParams | QueryLiteral = {}) {
+  toURL(
+    param?: Record<P, string | number>,
+    query: URLSearchParams | QueryLiteral = {}
+  ) {
     const pathNodes = this.#component.pathNodes;
     let hrefResult = this.origin;
     if (pathNodes.length !== 0) {
-      const pathSegments: string[] = []
-      for (let node of pathNodes) {
+      const pathSegments: string[] = [];
+      forEachIterable(pathNodes, node => {
         if (node.type === 'static') {
           pathSegments.push(node.name);
         } else {
@@ -296,21 +315,16 @@ class Source<P extends string = string> {
           }
           pathSegments.push(String(paramValue));
         }
-      }
+      });
       hrefResult += ('/' + pathSegments.join(PATH_SEPARATOR));
     }
-
     const queryString = query instanceof URLSearchParams
       ? query.toString()
-      : normalizeQueryLiteral(query).toString()
+      : normalizeQueryLiteral(query).toString();
     if (queryString !== '') {
       hrefResult += '?' + queryString;
     }
     return new URL(hrefResult);
-  }
-
-  clone() {
-    return this.extend<P>({});
   }
 }
 

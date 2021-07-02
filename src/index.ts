@@ -1,17 +1,23 @@
+import {
+  mergeHeaders,
+  normalizeHeadersLiteral,
+  normalizeQueryLiteral
+} from './util';
+
 export type {
+  AdapterCallbacks,
+  Adapter,
   HTTPMethod,
   ResponseType,
-  Response,
-  AdapterCallbacks,
-  Adapter
+  Response
 } from './adapter';
-export { xhrAdapter } from './adapter/xhr';
+export { default as xhrAdapter } from './adapter/xhr';
 export {
-  RocketError as Error,
-  NetworkError,
-  TimeoutError,
   AbortError,
-  ParseError
+  NetworkError,
+  ParseError,
+  RocketError as Error,
+  TimeoutError
 } from './errors';
 export {
   PluginsOption,
@@ -22,18 +28,13 @@ export {
 } from './plugin';
 export {
   default as Rocket,
-  default as default,
+  default,
   Payload
 } from './rocket';
 export { default as Source } from './source';
 export type {
   HeadersLiteral,
   QueryLiteral
-} from './util';
-import {
-  mergeHeaders,
-  normalizeHeadersLiteral,
-  normalizeQueryLiteral
 } from './util';
 export const util = {
   mergeHeaders,

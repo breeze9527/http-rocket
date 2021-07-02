@@ -90,5 +90,5 @@ rocket.send({
 - [ ] 单元测试
 - [ ] 兼容测试
 - [ ] CI/CD
-- [ ] Code style lint
+- [x] Code style lint
 - [ ] TypeScript exapmles
