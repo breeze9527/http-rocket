@@ -79,6 +79,23 @@
         "no-restricted-syntax": "off",
         "no-console": "off"
       }
+    },
+    {
+      "files": [
+        "test/**/*.js"
+      ],
+      "env": {
+        "mocha": true
+      },
+      "globals": {
+        "chai": "readonly",
+        "rocket": "readonly"
+      },
+      "rules": {
+        "no-var": "off",
+        "prefer-arrow-callback": "off",
+        "func-names": "off"
+      }
     }
   ]
 }
